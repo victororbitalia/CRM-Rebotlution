@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const totalGuests = todayReservations.reduce((sum, r) => sum + r.guests, 0);
     const averageGuests = todayReservations.length > 0 
       ? (totalGuests / todayReservations.length).toFixed(1) 
-      : 0;
+      : '0';
 
     // Ocupación de mesas
     const occupiedTables = tables.filter(t => !t.isAvailable).length;
