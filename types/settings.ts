@@ -92,3 +92,4 @@ export interface ServiceTurn {
   daysOfWeek: number[]; // 0=Domingo, 1=Lunes, etc.
 }
 
+

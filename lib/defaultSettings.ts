@@ -129,3 +129,4 @@ export const defaultSettings: RestaurantSettings = {
   updatedAt: new Date(),
 };
 
+
