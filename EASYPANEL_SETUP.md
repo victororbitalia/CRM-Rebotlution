@@ -370,3 +370,4 @@ Tu aplicación Cofradia CRM está ahora en producción con Easypanel.
 **¿Necesitas ayuda?** Consulta `DEPLOYMENT.md` para más opciones de despliegue.
 
 
+

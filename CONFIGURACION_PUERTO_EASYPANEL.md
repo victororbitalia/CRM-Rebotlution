@@ -158,3 +158,4 @@ En Easypanel verás algo similar a:
 ---
 
 **¡Listo!** Ahora tu app funcionará perfectamente en el puerto 3001. 🎯
+
