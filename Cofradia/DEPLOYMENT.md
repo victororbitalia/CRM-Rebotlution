@@ -352,3 +352,4 @@ Antes de desplegar, verifica:
 **¡Tu aplicación está lista para producción!** 🎉
 
 Para cualquier duda, consulta la documentación de Easypanel o revisa los logs de la aplicación.
+

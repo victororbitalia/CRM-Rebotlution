@@ -6,10 +6,10 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3001
       - NEXT_TELEMETRY_DISABLED=1
     restart: unless-stopped
     container_name: cofradia-crm
@@ -29,3 +29,4 @@ services:
 
 # volumes:
 #   postgres_data:
+
