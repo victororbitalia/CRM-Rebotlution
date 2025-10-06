@@ -1,4 +1,4 @@
-# 🚀 Guía de Despliegue - Cofradia CRM
+# 🚀 Guía de Despliegue - REBOTLUTION CRM
 
 Esta guía te ayudará a desplegar tu aplicación en Easypanel u otros servicios.
 

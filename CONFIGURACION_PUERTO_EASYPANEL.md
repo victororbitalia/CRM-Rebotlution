@@ -2,7 +2,7 @@
 
 ## 🎯 Tu App USA el Puerto 3001
 
-Tu aplicación Cofradia está configurada para usar el puerto **3001** (porque el 3000 ya está ocupado en tu servidor).
+Tu aplicación REBOTLUTION está configurada para usar el puerto **3001** (porque el 3000 ya está ocupado en tu servidor).
 
 ---
 

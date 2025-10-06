@@ -1,6 +1,6 @@
 # 💾 Guía de Configuración de Base de Datos - PostgreSQL
 
-Esta guía te ayudará a configurar PostgreSQL para Cofradia CRM.
+Esta guía te ayudará a configurar PostgreSQL para REBOTLUTION CRM.
 
 ---
 
@@ -116,7 +116,7 @@ docker-compose up -d postgres
 
 ### Paso 2: Conectar a tu Aplicación
 
-1. **Ve a tu aplicación Cofradia**
+1. **Ve a tu aplicación REBOTLUTION**
 2. **Click en "Environment"**
 3. **Agrega la variable:**
    ```

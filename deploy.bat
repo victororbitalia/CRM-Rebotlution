@@ -4,7 +4,7 @@ REM Uso: deploy.bat [opcion]
 
 echo.
 echo ============================================
-echo   Cofradia CRM - Script de Despliegue
+echo   REBOTLUTION CRM - Script de Despliegue
 echo ============================================
 echo.
 

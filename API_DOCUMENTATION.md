@@ -1,4 +1,4 @@
-# 📚 Documentación de la API - Cofradia Restaurant CRM
+# 📚 Documentación de la API - REBOTLUTION Restaurant CRM
 
 ## 🌐 URL Base
 ```
@@ -536,7 +536,7 @@ Obtiene toda la configuración del restaurante.
   "success": true,
   "data": {
     "id": "settings-1",
-    "restaurantName": "Cofradia Restaurant",
+    "restaurantName": "REBOTLUTION Restaurant",
     "email": "info@cofradia.com",
     "phone": "+34 900 123 456",
     "address": "Calle Principal, 123, Madrid",
@@ -695,7 +695,7 @@ Actualiza solo algunos campos de la configuración.
 **Body (JSON):**
 ```json
 {
-  "restaurantName": "Cofradia Actualizado",
+  "restaurantName": "REBOTLUTION Actualizado",
   "notifications": {
     "emailEnabled": true,
     "reminderHoursBefore": 48

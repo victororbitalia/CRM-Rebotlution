@@ -1,6 +1,6 @@
 # 🚀 Guía Rápida: Despliegue en Easypanel
 
-Esta es una guía paso a paso para desplegar Cofradia CRM en Easypanel.
+Esta es una guía paso a paso para desplegar REBOTLUTION CRM en Easypanel.
 
 ---
 
@@ -377,7 +377,7 @@ Después del despliegue:
 
 ## 🎉 ¡Felicidades!
 
-Tu aplicación Cofradia CRM está ahora en producción con Easypanel.
+Tu aplicación REBOTLUTION CRM está ahora en producción con Easypanel.
 
 **URL de tu app:** `https://tu-dominio.com`
 

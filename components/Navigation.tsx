@@ -31,7 +31,7 @@ export default function Navigation() {
                 <RestaurantIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-[var(--text-primary)] leading-none">Cofradia</h1>
+                <h1 className="text-lg font-bold text-[var(--text-primary)] leading-none">REBOTLUTION</h1>
                 <p className="text-xs text-[var(--text-secondary)] leading-none mt-0.5">Restaurant CRM</p>
               </div>
             </Link>

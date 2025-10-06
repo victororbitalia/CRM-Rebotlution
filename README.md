@@ -1,4 +1,4 @@
-# 🍽️ Cofradia - Sistema de Gestión de Reservas para Restaurantes
+# 🍽️ REBOTLUTION - Sistema de Gestión de Reservas para Restaurantes
 
 Un sistema profesional y completo para la gestión de reservas de restaurantes, construido con Next.js 14, React, TypeScript y Tailwind CSS. Incluye API REST completa para integraciones.
 

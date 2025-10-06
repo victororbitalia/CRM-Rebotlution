@@ -7,7 +7,7 @@ import { RestaurantProvider } from '@/context/RestaurantContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Cofradia CRM - Gestión de Reservas',
+  title: 'REBOTLUTION CRM - Gestión de Reservas',
   description: 'Sistema de gestión de reservas para restaurantes',
 }
 

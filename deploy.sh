@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Script de ayuda para despliegue de Cofradia CRM
+# Script de ayuda para despliegue de REBOTLUTION CRM
 # Uso: ./deploy.sh [opcion]
 
 set -e
 
-echo "🍽️  Cofradia CRM - Script de Despliegue"
+echo "🍽️  REBOTLUTION CRM - Script de Despliegue"
 echo "========================================"
 echo ""
 

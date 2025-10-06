@@ -4,8 +4,8 @@ export const defaultSettings: RestaurantSettings = {
   id: 'settings-1',
   
   // Información básica
-  restaurantName: 'Cofradia Restaurant',
-  email: 'info@cofradia.com',
+  restaurantName: 'REBOTLUTION Restaurant',
+  email: 'info@rebotlution.com',
   phone: '+34 900 123 456',
   address: 'Calle Principal, 123, Madrid',
   
