@@ -70,7 +70,6 @@ export async function PUT(
         tableId: body.tableId ?? undefined,
         status: body.status ?? undefined,
         specialRequests: body.specialRequests ?? undefined,
-        preferredLocation: body.preferredLocation ?? undefined,
       },
     });
 

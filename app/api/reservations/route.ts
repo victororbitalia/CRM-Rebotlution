@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { defaultSettings } from '@/lib/defaultSettings';
 
 // GET /api/reservations - Listar todas las reservas con filtros opcionales
 export async function GET(request: NextRequest) {
@@ -82,15 +83,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obtener configuración del restaurante (singleton)
+    // Obtener configuración del restaurante (singleton); fallback a defaultSettings si no existe
     const settingsRecord = await prisma.restaurantSettings.findUnique({ where: { id: 'settings-singleton' } });
-    const settings = (settingsRecord?.data as any) || {};
-    if (!settingsRecord) {
-      return NextResponse.json(
-        { success: false, error: 'Configuración del restaurante no encontrada' },
-        { status: 500 }
-      );
-    }
+    const settings = (settingsRecord?.data as any) || (defaultSettings as any);
 
     // Validar capacidad del restaurante
     const reservationDate = new Date(body.date);
@@ -269,7 +264,6 @@ export async function POST(request: NextRequest) {
         tableId: body.tableId || undefined,
         status: body.status || 'pending',
         specialRequests: body.specialRequests || undefined,
-        preferredLocation: body.preferredLocation || undefined,
       },
     });
 
