@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 # Etapa 2: Builder
 FROM node:18-alpine AS builder
@@ -17,6 +17,9 @@ WORKDIR /app
 # Copiar dependencias desde la etapa anterior
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Copiar carpeta prisma para que esté disponible en el runner
+COPY prisma ./prisma
 
 # Variables de entorno para el build
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -39,6 +42,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
 
@@ -47,6 +51,6 @@ EXPOSE 3001
 ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
 
-# Comando para iniciar la aplicación
-CMD ["node", "server.js"]
+# Ejecutar migraciones y luego iniciar la app
+CMD ["sh", "-c", "npx prisma migrate deploy || npx prisma db push; node server.js"]
 
