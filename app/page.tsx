@@ -4,10 +4,29 @@ import { useRestaurant } from '@/context/RestaurantContext';
 import StatCard from '@/components/StatCard';
 import ReservationCard from '@/components/ReservationCard';
 import { CalendarIcon, UsersIcon, TableIcon, StarIcon } from '@/components/Icons';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function Dashboard() {
   const { reservations, tables, updateReservation } = useRestaurant();
+  const [dbStats, setDbStats] = useState<{ today: number; week: number; average: number; occupancyRate: number } | null>(null);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const res = await fetch('/api/stats', { cache: 'no-store' });
+        const json = await res.json();
+        if (json?.success && json.data) {
+          setDbStats({
+            today: json.data.reservations.today,
+            week: json.data.reservations.week,
+            average: json.data.guests.average,
+            occupancyRate: json.data.tables.occupancyRate,
+          });
+        }
+      } catch {}
+    };
+    loadStats();
+  }, []);
 
   // Calcular estadísticas
   const stats = useMemo(() => {
@@ -77,26 +96,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           title="Reservas Hoy"
-          value={stats.todayReservations}
+          value={dbStats ? dbStats.today : stats.todayReservations}
           icon={<CalendarIcon className="w-5 h-5" />}
           color="blue"
           trend={{ value: 12, isPositive: true }}
         />
         <StatCard
           title="Reservas Semana"
-          value={stats.weekReservations}
+          value={dbStats ? dbStats.week : stats.weekReservations}
           icon={<CalendarIcon className="w-5 h-5" />}
           color="green"
         />
         <StatCard
           title="Promedio Comensales"
-          value={stats.averageGuests}
+          value={dbStats ? dbStats.average : stats.averageGuests}
           icon={<UsersIcon className="w-5 h-5" />}
           color="purple"
         />
         <StatCard
           title="Ocupación Mesas"
-          value={`${stats.occupancyRate}%`}
+          value={`${dbStats ? dbStats.occupancyRate : stats.occupancyRate}%`}
           icon={<TableIcon className="w-5 h-5" />}
           color="orange"
         />

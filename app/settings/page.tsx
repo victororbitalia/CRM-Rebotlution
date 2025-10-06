@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RestaurantSettings, DayRules } from '@/types/settings';
 import { defaultSettings } from '@/lib/defaultSettings';
 import { CheckIcon } from '@/components/Icons';
@@ -10,11 +10,37 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'reservations' | 'tables' | 'schedule' | 'notifications' | 'policies'>('general');
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    // Aquí guardarías en la base de datos o API
-    console.log('Guardando configuración:', settings);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  // Cargar ajustes desde API al montar
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await fetch('/api/settings', { cache: 'no-store' });
+        const json = await res.json();
+        if (json?.success && json.data) {
+          setSettings(json.data as RestaurantSettings);
+        }
+      } catch (e) {
+        // dejar valores por defecto si falla
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) throw new Error(json?.error || 'No se pudo guardar');
+      setSettings(json.data as RestaurantSettings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      alert('Error al guardar configuración');
+    }
   };
 
   const updateWeekdayRule = (day: string, field: keyof DayRules, value: any) => {

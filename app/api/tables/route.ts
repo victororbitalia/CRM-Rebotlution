@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Table } from '@/types';
-import { mockTables } from '@/lib/mockData';
-
-// Simulación de base de datos
-let tables: Table[] = mockTables;
+import { prisma } from '@/lib/prisma';
 
 // GET /api/tables - Listar todas las mesas con filtros opcionales
 export async function GET(request: NextRequest) {
@@ -13,33 +9,43 @@ export async function GET(request: NextRequest) {
     const available = searchParams.get('available');
     const minCapacity = searchParams.get('minCapacity');
 
-    let filtered = [...tables];
+    const where: any = {};
+    if (location) where.location = location;
+    if (available !== null) where.isAvailable = available === 'true';
+    if (minCapacity) where.capacity = { gte: parseInt(minCapacity) };
 
-    // Filtrar por ubicación
-    if (location) {
-      filtered = filtered.filter(t => t.location === location);
-    }
-
-    // Filtrar por disponibilidad
-    if (available !== null) {
-      const isAvailable = available === 'true';
-      filtered = filtered.filter(t => t.isAvailable === isAvailable);
-    }
-
-    // Filtrar por capacidad mínima
-    if (minCapacity) {
-      const capacity = parseInt(minCapacity);
-      filtered = filtered.filter(t => t.capacity >= capacity);
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: filtered,
-      count: filtered.length,
-    });
+    const data = await prisma.table.findMany({ where, orderBy: { number: 'asc' } });
+    return NextResponse.json({ success: true, data, count: data.length });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error al obtener mesas' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/tables - Crear una mesa
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    if (!body.number || !body.capacity || !body.location) {
+      return NextResponse.json(
+        { success: false, error: 'Faltan campos: number, capacity, location' },
+        { status: 400 }
+      );
+    }
+    const created = await prisma.table.create({
+      data: {
+        number: body.number,
+        capacity: body.capacity,
+        location: body.location,
+        isAvailable: body.isAvailable ?? true,
+      },
+    });
+    return NextResponse.json({ success: true, data: created }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Error al crear la mesa' },
       { status: 500 }
     );
   }

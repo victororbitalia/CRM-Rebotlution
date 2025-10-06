@@ -11,13 +11,15 @@ interface RestaurantContextType {
   updateReservation: (id: string, updates: Partial<Reservation>) => Promise<void>;
   deleteReservation: (id: string) => Promise<void>;
   getReservationsByDate: (date: Date) => Reservation[];
+  createTable: (data: Pick<Table, 'number' | 'capacity' | 'location'> & { isAvailable?: boolean }) => Promise<void>;
+  toggleTableAvailability: (id: string, isAvailable: boolean) => Promise<void>;
 }
 
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
 
 export function RestaurantProvider({ children }: { children: React.ReactNode }) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [tables] = useState<Table[]>(mockTables);
+  const [tables, setTables] = useState<Table[]>([]);
 
   // Cargar reservas desde la API al montar
   useEffect(() => {
@@ -37,7 +39,19 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         // Si falla la API, mantener vacío (o podríamos fallback a mock)
       }
     };
+    const loadTables = async () => {
+      try {
+        const res = await fetch('/api/tables', { cache: 'no-store' });
+        const json = await res.json();
+        if (json?.success && Array.isArray(json.data)) {
+          setTables(json.data);
+        }
+      } catch (e) {
+        // mantener vacío en caso de error
+      }
+    };
     loadReservations();
+    loadTables();
   }, []);
 
   const addReservation = async (reservation: Omit<Reservation, 'id' | 'createdAt'>) => {
@@ -97,6 +111,28 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     setReservations(prev => prev.filter(res => res.id !== id));
   };
 
+  const createTable = async (data: Pick<Table, 'number' | 'capacity' | 'location'> & { isAvailable?: boolean }) => {
+    const res = await fetch('/api/tables', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok || !json?.success) throw new Error(json?.error || 'No se pudo crear la mesa');
+    setTables(prev => [...prev, json.data as Table]);
+  };
+
+  const toggleTableAvailability = async (id: string, isAvailable: boolean) => {
+    const res = await fetch(`/api/tables/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isAvailable }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json?.success) throw new Error(json?.error || 'No se pudo actualizar la mesa');
+    setTables(prev => prev.map(t => (t.id === id ? (json.data as Table) : t)));
+  };
+
   const getReservationsByDate = (date: Date) => {
     return reservations.filter(res => {
       const resDate = new Date(res.date);
@@ -113,6 +149,8 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         updateReservation,
         deleteReservation,
         getReservationsByDate,
+        createTable,
+        toggleTableAvailability,
       }}
     >
       {children}

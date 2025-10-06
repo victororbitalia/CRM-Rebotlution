@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Table } from '@/types';
-import { mockTables } from '@/lib/mockData';
-
-// Simulación de base de datos
-let tables: Table[] = mockTables;
+import { prisma } from '@/lib/prisma';
 
 // GET /api/tables/:id - Obtener una mesa específica
 export async function GET(
@@ -11,7 +7,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const table = tables.find(t => t.id === params.id);
+    const table = await prisma.table.findUnique({ where: { id: params.id } });
 
     if (!table) {
       return NextResponse.json(
@@ -39,13 +35,9 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const index = tables.findIndex(t => t.id === params.id);
-
-    if (index === -1) {
-      return NextResponse.json(
-        { success: false, error: 'Mesa no encontrada' },
-        { status: 404 }
-      );
+    const exists = await prisma.table.findUnique({ where: { id: params.id } });
+    if (!exists) {
+      return NextResponse.json({ success: false, error: 'Mesa no encontrada' }, { status: 404 });
     }
 
     // Validar disponibilidad
@@ -56,20 +48,36 @@ export async function PUT(
       );
     }
 
-    // Actualizar mesa (solo permitimos cambiar isAvailable)
-    tables[index] = {
-      ...tables[index],
-      isAvailable: body.isAvailable !== undefined ? body.isAvailable : tables[index].isAvailable,
-    };
-
-    return NextResponse.json({
-      success: true,
-      data: tables[index],
-      message: 'Mesa actualizada exitosamente',
+    const updated = await prisma.table.update({
+      where: { id: params.id },
+      data: {
+        isAvailable: body.isAvailable !== undefined ? body.isAvailable : undefined,
+      },
     });
+    return NextResponse.json({ success: true, data: updated, message: 'Mesa actualizada exitosamente' });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error al actualizar la mesa' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/tables/:id - Eliminar mesa
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const exists = await prisma.table.findUnique({ where: { id: params.id } });
+    if (!exists) {
+      return NextResponse.json({ success: false, error: 'Mesa no encontrada' }, { status: 404 });
+    }
+    const deleted = await prisma.table.delete({ where: { id: params.id } });
+    return NextResponse.json({ success: true, data: deleted, message: 'Mesa eliminada exitosamente' });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Error al eliminar la mesa' },
       { status: 500 }
     );
   }
