@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('POST /api/reservations - Body recibido:', body);
 
     // Validaciones
     if (!body.customerName || !body.customerEmail || !body.customerPhone) {
@@ -266,6 +267,7 @@ export async function POST(request: NextRequest) {
       body.tableId = assignedTableId;
     }
 
+    console.log('Creando reserva en BD...');
     const newReservation = await prisma.reservation.create({
       data: {
         customerName: body.customerName,
@@ -293,8 +295,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('Reserva creada exitosamente:', newReservation);
     return NextResponse.json({ success: true, data: newReservation, message: 'Reserva creada exitosamente' }, { status: 201 });
   } catch (error) {
+    console.error('Error al crear reserva:', error);
     return NextResponse.json(
       { success: false, error: 'Error al crear la reserva' },
       { status: 500 }
