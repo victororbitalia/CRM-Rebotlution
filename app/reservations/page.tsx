@@ -284,6 +284,7 @@ export default function ReservationsPage() {
               reservation={reservation}
               onStatusChange={handleStatusChange}
               onDelete={handleDelete}
+              onUpdate={(id, updates) => updateReservation(id, updates)}
             />
           ))}
         </div>
