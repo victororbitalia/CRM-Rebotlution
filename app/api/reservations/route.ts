@@ -36,6 +36,19 @@ export async function GET(request: NextRequest) {
     const data = await prisma.reservation.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        date: true,
+        time: true,
+        guests: true,
+        status: true,
+        specialRequests: true,
+        createdAt: true,
+        tableId: true,
+      },
     });
 
     return NextResponse.json({ success: true, data, count: data.length });
@@ -264,6 +277,19 @@ export async function POST(request: NextRequest) {
         tableId: body.tableId || undefined,
         status: body.status || 'pending',
         specialRequests: body.specialRequests || undefined,
+      },
+      select: {
+        id: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        date: true,
+        time: true,
+        guests: true,
+        status: true,
+        specialRequests: true,
+        createdAt: true,
+        tableId: true,
       },
     });
 
