@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { defaultSettings } from '@/lib/defaultSettings';
 
 const SETTINGS_ID = 'settings-singleton';
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     const existing = await prisma.restaurantSettings.findUnique({ where: { id: SETTINGS_ID } });
     if (!existing) {
       const created = await prisma.restaurantSettings.create({
-        data: { id: SETTINGS_ID, data: defaultSettings },
+        data: { id: SETTINGS_ID, data: defaultSettings as unknown as Prisma.InputJsonValue },
       });
       return NextResponse.json({ success: true, data: created.data });
     }
@@ -76,7 +77,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const existing = await prisma.restaurantSettings.findUnique({ where: { id: SETTINGS_ID } });
-    const nextData = { ...(existing?.data || {}), ...body };
+    const nextData = { ...(existing?.data as any || {}), ...body } as unknown as Prisma.InputJsonValue;
     const saved = await prisma.restaurantSettings.upsert({
       where: { id: SETTINGS_ID },
       create: { id: SETTINGS_ID, data: nextData },
@@ -96,8 +97,8 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
     const existing = await prisma.restaurantSettings.findUnique({ where: { id: SETTINGS_ID } });
-    const base = existing?.data || defaultSettings;
-    const merged = deepMerge(base, body);
+    const base = (existing?.data as any) || defaultSettings;
+    const merged = deepMerge(base, body) as unknown as Prisma.InputJsonValue;
     const saved = await prisma.restaurantSettings.upsert({
       where: { id: SETTINGS_ID },
       create: { id: SETTINGS_ID, data: merged },
