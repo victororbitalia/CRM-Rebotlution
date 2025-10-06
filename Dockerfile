@@ -3,23 +3,26 @@
 
 # Etapa 1: Dependencias
 FROM node:18-alpine AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
+# Evitar que prisma generate se ejecute en postinstall durante la instalación de dependencias
+ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
 RUN npm install --no-audit --no-fund
 
 # Etapa 2: Builder
 FROM node:18-alpine AS builder
+RUN apk add --no-cache openssl
 WORKDIR /app
 
 # Copiar dependencias desde la etapa anterior
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Copiar carpeta prisma para que esté disponible en el runner
-COPY prisma ./prisma
+# Asegurar generación del cliente de Prisma antes del build
+RUN npx prisma generate
 
 # Variables de entorno para el build
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -29,6 +32,7 @@ RUN npm run build
 
 # Etapa 3: Runner (imagen final)
 FROM node:18-alpine AS runner
+RUN apk add --no-cache openssl
 WORKDIR /app
 
 ENV NODE_ENV=production

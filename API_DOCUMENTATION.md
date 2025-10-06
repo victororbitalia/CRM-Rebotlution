@@ -5,7 +5,7 @@
 http://localhost:3000/api
 ```
 
-En producción, reemplaza `localhost:3000` con tu dominio.
+En producción, reemplaza `localhost:3001` con tu dominio.
 
 ---
 
