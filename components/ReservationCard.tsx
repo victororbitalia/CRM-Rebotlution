@@ -133,6 +133,8 @@ export default function ReservationCard({ reservation, onStatusChange, onDelete,
         <div className="space-y-2.5 mb-4">
           <div className="flex items-center text-sm text-[var(--text-secondary)]">
             <ClockIcon className="w-4 h-4 mr-2" />
+            <span className="font-medium">{new Date(reservation.date).toLocaleDateString()}</span>
+            <span className="mx-2">•</span>
             <span className="font-medium">{reservation.time}</span>
           </div>
           <div className="flex items-center text-sm text-[var(--text-secondary)]">

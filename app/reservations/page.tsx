@@ -95,6 +95,16 @@ export default function ReservationsPage() {
     }
   };
 
+  const formatHeaderDate = (date: Date) => {
+    const formatted = new Intl.DateTimeFormat('es-ES', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -277,15 +287,33 @@ export default function ReservationsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredReservations.map(reservation => (
-            <ReservationCard
-              key={reservation.id}
-              reservation={reservation}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-              onUpdate={(id, updates) => updateReservation(id, updates)}
-            />
+        <div className="space-y-8">
+          {Array.from(
+            filteredReservations.reduce((map, r) => {
+              const key = new Date(r.date).toDateString();
+              if (!map.has(key)) map.set(key, [] as typeof filteredReservations);
+              map.get(key)!.push(r);
+              return map;
+            }, new Map<string, typeof filteredReservations>()).entries()
+          ).map(([dateKey, group]) => (
+            <div key={dateKey}>
+              <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-primary)]/60">
+                <h2 className="text-sm font-semibold text-[var(--text-secondary)] tracking-wide mb-3">
+                  {formatHeaderDate(new Date(group[0].date))}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {group.map(reservation => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    onUpdate={(id, updates) => updateReservation(id, updates)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
