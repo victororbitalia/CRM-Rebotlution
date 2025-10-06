@@ -19,6 +19,7 @@ export default function ReservationsPage() {
     date: '',
     time: '',
     guests: 2,
+    preferredLocation: 'any',
     specialRequests: '',
   });
 
@@ -32,6 +33,7 @@ export default function ReservationsPage() {
       date: new Date(formData.date),
       time: formData.time,
       guests: formData.guests,
+      preferredLocation: formData.preferredLocation as any,
       status: 'pending',
       specialRequests: formData.specialRequests || undefined,
     });
@@ -43,6 +45,7 @@ export default function ReservationsPage() {
       date: '',
       time: '',
       guests: 2,
+      preferredLocation: 'any',
       specialRequests: '',
     });
     setShowForm(false);
@@ -212,6 +215,26 @@ export default function ReservationsPage() {
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                 className="input-field"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                Ubicación Preferida
+              </label>
+              <select
+                value={formData.preferredLocation}
+                onChange={(e) => setFormData({ ...formData, preferredLocation: e.target.value })}
+                className="input-field"
+              >
+                <option value="any">Cualquiera</option>
+                <option value="interior">Interior</option>
+                <option value="exterior">Exterior</option>
+                <option value="terraza">Terraza</option>
+                <option value="privado">Privado</option>
+              </select>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                Se asignará mesa automáticamente según esta preferencia
+              </p>
             </div>
 
             <div className="md:col-span-2">

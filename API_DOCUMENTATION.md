@@ -116,7 +116,7 @@ curl http://localhost:3001/api/reservations/res-1
 ---
 
 ### 3. Crear nueva reserva
-Crea una nueva reserva en el sistema.
+Crea una nueva reserva en el sistema con validación de capacidad.
 
 **Endpoint:** `POST /api/reservations`
 
@@ -129,6 +129,7 @@ Crea una nueva reserva en el sistema.
   "date": "2024-10-05",
   "time": "20:00",
   "guests": 4,
+  "preferredLocation": "interior",
   "tableId": "table-3",
   "specialRequests": "Cumpleaños"
 }
@@ -148,8 +149,16 @@ Crea una nueva reserva en el sistema.
 | Campo | Tipo | Descripción | Default |
 |-------|------|-------------|---------|
 | `tableId` | string | ID de la mesa asignada | `undefined` |
+| `preferredLocation` | string | Preferencia de ubicación para asignación automática (`interior`, `exterior`, `terraza`, `privado`, `any`) | `any` o `defaultPreferredLocation` |
 | `status` | string | Estado inicial | `pending` |
 | `specialRequests` | string | Peticiones especiales | `undefined` |
+
+**Validaciones de Capacidad:**
+- ✅ Verifica que el restaurante esté abierto el día solicitado
+- ✅ Valida límite de reservas por día (`maxReservations`)
+- ✅ Valida límite de comensales totales por día (`maxGuestsTotal`)
+- ✅ Verifica disponibilidad de mesa específica (si se proporciona)
+- ✅ Valida que la mesa no esté ya reservada en la misma fecha y hora
 
 **Respuesta exitosa (201):**
 ```json
@@ -172,6 +181,56 @@ Crea una nueva reserva en el sistema.
 }
 ```
 
+**Respuestas de Error de Capacidad (409):**
+
+**Restaurante cerrado:**
+```json
+{
+  "success": false,
+  "error": "El restaurante no está abierto este día"
+}
+```
+
+**Límite de reservas alcanzado:**
+```json
+{
+  "success": false,
+  "error": "No hay disponibilidad para este día. Límite de reservas alcanzado.",
+  "details": {
+    "maxReservations": 50,
+    "currentReservations": 50,
+    "availableSlots": 0
+  }
+}
+```
+
+**Límite de comensales alcanzado:**
+```json
+{
+  "success": false,
+  "error": "No hay disponibilidad para este día. Límite de comensales alcanzado.",
+  "details": {
+    "maxGuestsTotal": 100,
+    "currentGuests": 95,
+    "requestedGuests": 8,
+    "availableGuests": 5
+  }
+}
+```
+
+**Mesa ya reservada:**
+```json
+{
+  "success": false,
+  "error": "La mesa ya está reservada para esta fecha y hora",
+  "details": {
+    "tableId": "table-1",
+    "conflictingTime": "20:00",
+    "conflictingReservationId": "reservation-2"
+  }
+}
+```
+
 **Respuesta de error (400):**
 ```json
 {
@@ -190,7 +249,8 @@ curl -X POST http://localhost:3001/api/reservations \
     "customerPhone": "+34 600 123 456",
     "date": "2024-10-05",
     "time": "20:00",
-    "guests": 4
+    "guests": 4,
+    "preferredLocation": "interior"
   }'
 ```
 
@@ -590,7 +650,8 @@ Obtiene toda la configuración del restaurante.
       "minGuestsPerReservation": 1,
       "allowWaitlist": true,
       "requireConfirmation": false,
-      "autoConfirmAfterMinutes": 30
+      "autoConfirmAfterMinutes": 30,
+      "defaultPreferredLocation": "any"
     },
     "tables": {
       "totalTables": 10,

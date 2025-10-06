@@ -24,6 +24,7 @@ export interface RestaurantSettings {
     allowWaitlist: boolean; // Permitir lista de espera
     requireConfirmation: boolean; // Requiere confirmación del restaurante
     autoConfirmAfterMinutes: number; // Auto-confirmar después de X minutos
+    defaultPreferredLocation?: TableLocation | 'any'; // Ubicación por defecto para asignación automática
   };
   
   // Configuración de mesas
@@ -91,6 +92,9 @@ export interface ServiceTurn {
   maxReservations: number;
   daysOfWeek: number[]; // 0=Domingo, 1=Lunes, etc.
 }
+
+// Ubicaciones posibles de mesas
+export type TableLocation = 'interior' | 'exterior' | 'terraza' | 'privado';
 
 
 

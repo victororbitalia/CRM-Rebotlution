@@ -82,6 +82,182 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Obtener configuración del restaurante (singleton)
+    const settingsRecord = await prisma.restaurantSettings.findUnique({ where: { id: 'settings-singleton' } });
+    const settings = (settingsRecord?.data as any) || {};
+    if (!settingsRecord) {
+      return NextResponse.json(
+        { success: false, error: 'Configuración del restaurante no encontrada' },
+        { status: 500 }
+      );
+    }
+
+    // Validar capacidad del restaurante
+    const reservationDate = new Date(body.date);
+    const dayOfWeek = reservationDate.getDay(); // 0 = domingo, 1 = lunes, etc.
+    const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    const weekdayRules = settings.weekdayRules as any;
+
+    // Verificar si el día está habilitado
+    const dayKey = dayNames[dayOfWeek];
+    if (!weekdayRules?.[dayKey]) {
+      return NextResponse.json(
+        { success: false, error: 'Reglas de capacidad no definidas para este día' },
+        { status: 409 }
+      );
+    }
+    // Verificar si el día está habilitado (si existe bandera)
+    if (weekdayRules[dayKey]?.enabled === false) {
+      return NextResponse.json(
+        { success: false, error: 'El restaurante no está abierto este día' },
+        { status: 409 }
+      );
+    }
+
+    // Obtener reglas del día específico
+    const dayRules = weekdayRules[dayKey];
+    const maxReservations = dayRules.maxReservations || 50;
+    const maxGuestsTotal = dayRules.maxGuestsTotal || 100;
+
+    // Contar reservas existentes para la fecha
+    const startOfDay = new Date(reservationDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(reservationDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingReservations = await prisma.reservation.findMany({
+      where: {
+        date: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        status: {
+          in: ['pending', 'confirmed']
+        }
+      }
+    });
+
+    // Verificar límite de reservas
+    if (existingReservations.length >= maxReservations) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'No hay disponibilidad para este día. Límite de reservas alcanzado.',
+          details: {
+            maxReservations,
+            currentReservations: existingReservations.length,
+            availableSlots: 0
+          }
+        },
+        { status: 409 }
+      );
+    }
+
+    // Verificar límite de comensales totales
+    const totalGuests = existingReservations.reduce((sum, res) => sum + res.guests, 0);
+    if (totalGuests + body.guests > maxGuestsTotal) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'No hay disponibilidad para este día. Límite de comensales alcanzado.',
+          details: {
+            maxGuestsTotal,
+            currentGuests: totalGuests,
+            requestedGuests: body.guests,
+            availableGuests: maxGuestsTotal - totalGuests
+          }
+        },
+        { status: 409 }
+      );
+    }
+
+    // Verificar disponibilidad de mesas si se especifica una mesa
+    if (body.tableId) {
+      const tableExists = await prisma.table.findUnique({
+        where: { id: body.tableId }
+      });
+
+      if (!tableExists) {
+        return NextResponse.json(
+          { success: false, error: 'La mesa especificada no existe' },
+          { status: 400 }
+        );
+      }
+
+      // Verificar si la mesa ya está reservada en esa fecha y hora
+      const conflictingReservation = await prisma.reservation.findFirst({
+        where: {
+          tableId: body.tableId,
+          date: {
+            gte: startOfDay,
+            lte: endOfDay
+          },
+          time: body.time,
+          status: {
+            in: ['pending', 'confirmed']
+          }
+        }
+      });
+
+      if (conflictingReservation) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'La mesa ya está reservada para esta fecha y hora',
+            details: {
+              tableId: body.tableId,
+              conflictingTime: body.time,
+              conflictingReservationId: conflictingReservation.id
+            }
+          },
+          { status: 409 }
+        );
+      }
+    } else {
+      // Asignación automática de mesa si no se proporciona tableId
+      const preferredLocation: string = body.preferredLocation || settings.reservations?.defaultPreferredLocation || 'any';
+
+      // Candidatas por capacidad (y ubicación si se indica)
+      const candidateTables = await prisma.table.findMany({
+        where: {
+          capacity: { gte: body.guests },
+          ...(preferredLocation !== 'any' ? { location: preferredLocation } : {}),
+        },
+        orderBy: { capacity: 'asc' }, // mejor ajuste primero
+      });
+
+      // Filtrar mesas que no estén en conflicto a esa fecha/hora
+      let assignedTableId: string | undefined;
+      for (const table of candidateTables) {
+        const conflict = await prisma.reservation.findFirst({
+          where: {
+            tableId: table.id,
+            date: { gte: startOfDay, lte: endOfDay },
+            time: body.time,
+            status: { in: ['pending', 'confirmed'] },
+          },
+          select: { id: true },
+        });
+        if (!conflict) {
+          assignedTableId = table.id;
+          break;
+        }
+      }
+
+      if (!assignedTableId) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'No hay mesas disponibles que cumplan los criterios',
+            details: { preferredLocation, guests: body.guests },
+          },
+          { status: 409 }
+        );
+      }
+
+      body.tableId = assignedTableId;
+    }
+
     const newReservation = await prisma.reservation.create({
       data: {
         customerName: body.customerName,
@@ -93,6 +269,7 @@ export async function POST(request: NextRequest) {
         tableId: body.tableId || undefined,
         status: body.status || 'pending',
         specialRequests: body.specialRequests || undefined,
+        preferredLocation: body.preferredLocation || undefined,
       },
     });
 

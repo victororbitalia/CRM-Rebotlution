@@ -30,6 +30,7 @@ export const defaultSettings: RestaurantSettings = {
     allowWaitlist: true,
     requireConfirmation: false,
     autoConfirmAfterMinutes: 30,
+    defaultPreferredLocation: 'any',
   },
   
   // Configuración de mesas

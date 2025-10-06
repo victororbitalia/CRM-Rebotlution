@@ -19,6 +19,7 @@ export interface Reservation {
   time: string;
   guests: number;
   tableId?: string;
+  preferredLocation?: 'interior' | 'exterior' | 'terraza' | 'privado' | 'any';
   status: ReservationStatus;
   specialRequests?: string;
   createdAt: Date;

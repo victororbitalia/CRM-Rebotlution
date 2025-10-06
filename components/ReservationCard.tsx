@@ -42,6 +42,7 @@ export default function ReservationCard({ reservation, onStatusChange, onDelete,
     date: new Date(reservation.date).toISOString().slice(0, 10),
     time: reservation.time || '',
     guests: reservation.guests || 1,
+    preferredLocation: (reservation as any).preferredLocation || 'any',
     specialRequests: reservation.specialRequests || '',
   });
 
@@ -57,6 +58,7 @@ export default function ReservationCard({ reservation, onStatusChange, onDelete,
       date: new Date(form.date),
       time: form.time,
       guests: Number(form.guests),
+      preferredLocation: form.preferredLocation as any,
       specialRequests: form.specialRequests || undefined,
     });
     setIsEditing(false);
@@ -120,6 +122,17 @@ export default function ReservationCard({ reservation, onStatusChange, onDelete,
               value={form.guests}
               onChange={(e) => setForm({ ...form, guests: Number(e.target.value) })}
             />
+            <select
+              className="input-field"
+              value={form.preferredLocation}
+              onChange={(e) => setForm({ ...form, preferredLocation: e.target.value })}
+            >
+              <option value="any">Ubicación: Cualquiera</option>
+              <option value="interior">Ubicación: Interior</option>
+              <option value="exterior">Ubicación: Exterior</option>
+              <option value="terraza">Ubicación: Terraza</option>
+              <option value="privado">Ubicación: Privado</option>
+            </select>
             <textarea
               className="input-field"
               rows={3}
