@@ -5,15 +5,22 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "prisma migrate deploy || prisma db push && next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev --name init",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "next": "14.0.4",
+    "@prisma/client": "^5.18.0",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
+    "prisma": "^5.18.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
