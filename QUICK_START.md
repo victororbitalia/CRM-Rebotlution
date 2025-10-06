@@ -40,17 +40,23 @@ En Easypanel:
 
 ## 🔧 Configuración Mínima
 
+### 1. Variables de entorno (OBLIGATORIO)
+
 En Easypanel, configura:
 
-**Variables de entorno:**
 ```
 NODE_ENV=production
-PORT=3000
+PORT=3001
+DATABASE_URL=postgresql://cofradia:password@postgres:5432/cofradia_db
 ```
 
-**Recursos:**
+⚠️ **IMPORTANTE**: Debes crear un servicio PostgreSQL primero. Ver [DATABASE_SETUP.md](./DATABASE_SETUP.md)
+
+### 2. Recursos
+
 - CPU: 0.5-1
 - RAM: 512MB-1GB
+- PostgreSQL: 512MB mínimo
 
 ---
 

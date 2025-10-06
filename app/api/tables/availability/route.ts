@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockTables } from '@/lib/mockData';
-
-// Simulación de base de datos
-let tables = mockTables;
+import { prisma } from '@/lib/prisma';
 
 // GET /api/tables/availability - Verificar disponibilidad de mesas
 export async function GET(request: NextRequest) {
@@ -28,18 +25,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Filtrar mesas disponibles con capacidad suficiente
-    let availableTables = tables.filter(t => 
-      t.isAvailable && t.capacity >= guestsNum
-    );
+    // Construir filtro para Prisma
+    const where: any = {
+      isAvailable: true,
+      capacity: { gte: guestsNum },
+    };
 
     // Filtrar por ubicación si se especifica
     if (location) {
-      availableTables = availableTables.filter(t => t.location === location);
+      where.location = location;
     }
 
-    // Ordenar por capacidad (las más pequeñas primero para optimizar)
-    availableTables.sort((a, b) => a.capacity - b.capacity);
+    // Obtener mesas disponibles desde la base de datos
+    const availableTables = await prisma.table.findMany({
+      where,
+      orderBy: { capacity: 'asc' }, // Las más pequeñas primero para optimizar
+    });
 
     return NextResponse.json({
       success: true,

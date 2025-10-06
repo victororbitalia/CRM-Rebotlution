@@ -59,7 +59,7 @@ Easypanel detectará automáticamente el `Dockerfile`. Verifica que:
 
 - ✅ **Build Method:** Docker
 - ✅ **Dockerfile Path:** `./Dockerfile`
-- ✅ **Port:** `3000`
+- ✅ **Port:** `3001`
 
 #### 4. Variables de Entorno (Opcional)
 
@@ -67,7 +67,7 @@ En la sección "Environment", agrega:
 
 ```
 NODE_ENV=production
-PORT=3000
+PORT=3001
 NEXT_PUBLIC_APP_URL=https://tu-dominio.com
 ```
 
@@ -162,7 +162,7 @@ Si necesitas más capacidad:
 
 Easypanel verificará automáticamente que tu app esté funcionando:
 
-- **URL:** `http://localhost:3000`
+- **URL:** `http://localhost:3001`
 - **Interval:** 30 segundos
 - **Timeout:** 10 segundos
 
@@ -225,7 +225,7 @@ npm run build
 
 **Solución:**
 1. Revisa logs en Easypanel
-2. Verifica que el puerto sea `3000`
+2. Verifica que el puerto sea `3001`
 3. Verifica variables de entorno
 
 ### No Carga Estilos
@@ -243,7 +243,7 @@ output: 'standalone'
 **Error:** "Port already in use"
 
 **Solución:**
-En Easypanel, verifica que el puerto sea `3000`
+En Easypanel, verifica que el puerto sea `3001`
 
 ---
 
@@ -281,31 +281,53 @@ Después del despliegue:
 
 ---
 
-## 💾 Base de Datos (Próximo Paso)
+## 💾 Base de Datos (OBLIGATORIO)
 
-Para conectar una base de datos PostgreSQL:
+⚠️ **IMPORTANTE**: PostgreSQL es **OBLIGATORIO** para que la aplicación funcione. No es opcional.
 
 ### 1. Crear Base de Datos en Easypanel
 
-1. **Create Service** > **Database** > **PostgreSQL**
-2. Configurar nombre y password
-3. **Deploy**
+1. En Easypanel, **Create** > **Service** > **Database** > **PostgreSQL**
+2. **Nombre:** `cofradia-db`
+3. **Usuario:** `cofradia` (o el que prefieras)
+4. **Password:** Genera una contraseña segura
+5. **Base de datos:** `cofradia_db`
+6. Click en **Deploy**
 
 ### 2. Conectar a tu App
 
-En tu app, agrega variable de entorno:
+1. Ve a tu aplicación en Easypanel
+2. Click en **"Environment"**
+3. Agrega la variable:
+   ```
+   DATABASE_URL=postgresql://cofradia:tu-password@postgres:5432/cofradia_db
+   ```
+4. **Guarda** y **Redeploy** la app
 
-```
-DATABASE_URL=postgresql://user:password@postgres:5432/cofradia_db
-```
+### 3. Ejecutar Migraciones
 
-### 3. Actualizar Código
-
-Instalar Prisma o tu ORM preferido:
+Después del deploy, conecta al contenedor y ejecuta:
 
 ```bash
-npm install prisma @prisma/client
+# Generar cliente Prisma
+npx prisma generate
+
+# Aplicar migraciones
+npx prisma migrate deploy
 ```
+
+**Nota:** Prisma ya está instalado en el proyecto. No necesitas instalarlo.
+
+### 4. Verificar Conexión
+
+Prueba que la BD funcione:
+```bash
+# Desde tu navegador o terminal
+curl https://tu-dominio.com/api/tables
+curl https://tu-dominio.com/api/reservations
+```
+
+Si obtienes datos, ¡la BD está conectada correctamente! ✅
 
 ---
 

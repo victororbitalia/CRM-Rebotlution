@@ -47,12 +47,12 @@ git push -u origin main
    - Selecciona tu repositorio `cofradia`
 5. **Configuración automática:**
    - Easypanel detectará el `Dockerfile` automáticamente
-   - Puerto: `3000` (ya configurado)
+   - Puerto: `3001` (ya configurado)
    - Build: Automático con Docker
 6. **Variables de entorno (opcional):**
    ```
    NODE_ENV=production
-   PORT=3000
+   PORT=3001
    NEXT_PUBLIC_APP_URL=https://tu-dominio.com
    ```
 7. **Click en "Deploy"**
@@ -99,7 +99,7 @@ docker-compose logs -f
 # Detener
 docker-compose down
 
-# Acceder a: http://localhost:3000
+# Acceder a: http://localhost:3001
 ```
 
 ---
@@ -116,7 +116,7 @@ docker build -t cofradia-crm .
 
 ```bash
 docker run -d \
-  -p 3000:3000 \
+  -p 3001:3001 \
   -e NODE_ENV=production \
   --name cofradia-crm \
   cofradia-crm
@@ -175,9 +175,12 @@ Crea un archivo `.env.production` (NO lo subas a GitHub):
 
 ```env
 NODE_ENV=production
-PORT=3000
+PORT=3001
 NEXT_PUBLIC_APP_URL=https://tu-dominio.com
 NEXT_PUBLIC_API_URL=https://tu-dominio.com/api
+
+# Base de datos (OBLIGATORIO)
+DATABASE_URL=postgresql://usuario:password@host:5432/cofradia_db
 ```
 
 ### En Easypanel
@@ -186,21 +189,32 @@ Configura las variables en la sección "Environment" de tu app:
 
 ```
 NODE_ENV=production
-PORT=3000
+PORT=3001
 NEXT_PUBLIC_APP_URL=https://tu-dominio.com
+DATABASE_URL=postgresql://usuario:password@postgres:5432/cofradia_db
 ```
+
+⚠️ **IMPORTANTE**: La variable `DATABASE_URL` es **OBLIGATORIA**. La aplicación no funcionará sin una base de datos PostgreSQL configurada.
 
 ---
 
 ## 🔍 Verificación Post-Despliegue
 
-### 1. Verifica que la app esté corriendo:
+### 1. Verifica que la base de datos esté conectada:
+
+```bash
+# Conecta al contenedor y ejecuta
+npx prisma migrate deploy
+npx prisma generate
+```
+
+### 2. Verifica que la app esté corriendo:
 
 ```bash
 curl https://tu-dominio.com
 ```
 
-### 2. Verifica la API:
+### 3. Verifica la API:
 
 ```bash
 # Estadísticas
@@ -211,9 +225,12 @@ curl https://tu-dominio.com/api/reservations
 
 # Mesas
 curl https://tu-dominio.com/api/tables
+
+# Configuración
+curl https://tu-dominio.com/api/settings
 ```
 
-### 3. Verifica en el navegador:
+### 4. Verifica en el navegador:
 
 - Dashboard: `https://tu-dominio.com`
 - Reservas: `https://tu-dominio.com/reservations`
@@ -236,9 +253,9 @@ docker-compose up -d
 ### Error: "Port already in use"
 
 ```bash
-# Cambiar puerto en docker-compose.yml
+# Cambiar puerto en docker-compose.yml (si es necesario)
 ports:
-  - "3001:3000"  # Usar 3001 en lugar de 3000
+  - "3002:3001"  # Usar 3002 si 3001 está ocupado
 ```
 
 ### Error: "Build failed"
@@ -305,17 +322,71 @@ Easypanel desplegará automáticamente si configuraste auto-deploy.
 
 ---
 
+## 💾 Configuración de Base de Datos
+
+### PostgreSQL es OBLIGATORIO
+
+Esta aplicación **requiere** PostgreSQL para funcionar. No es opcional.
+
+### En Easypanel
+
+1. **Crear servicio PostgreSQL:**
+   - Click en "+ Create" > "Database" > "PostgreSQL"
+   - Nombre: `cofradia-db`
+   - Usuario: `cofradia`
+   - Password: (genera uno seguro)
+   - Click en "Deploy"
+
+2. **Obtener URL de conexión:**
+   ```
+   postgresql://cofradia:tu-password@postgres:5432/cofradia_db
+   ```
+
+3. **Agregar a tu app:**
+   - Ve a tu app > "Environment"
+   - Agrega: `DATABASE_URL=postgresql://cofradia:tu-password@postgres:5432/cofradia_db`
+   - Redeploy la app
+
+4. **Ejecutar migraciones:**
+   - Conecta al contenedor de tu app
+   - Ejecuta: `npx prisma migrate deploy`
+   - Ejecuta: `npx prisma generate`
+
+### En Docker Local
+
+El `docker-compose.yml` ya incluye PostgreSQL. Solo ejecuta:
+
+```bash
+docker-compose up -d
+```
+
+La base de datos se creará automáticamente.
+
+### Troubleshooting BD
+
+**Error: "Can't reach database server"**
+- Verifica que PostgreSQL esté corriendo
+- Verifica que `DATABASE_URL` esté configurada correctamente
+- Verifica la conectividad de red entre contenedores
+
+**Error: "Table does not exist"**
+- Ejecuta: `npx prisma migrate deploy`
+- Verifica que las migraciones se hayan aplicado
+
+---
+
 ## 📈 Próximos Pasos
 
 Después del despliegue:
 
-1. ✅ Configurar dominio personalizado
-2. ✅ Configurar SSL/HTTPS (automático en Easypanel)
-3. ✅ Conectar base de datos (PostgreSQL recomendado)
-4. ✅ Configurar backups automáticos
-5. ✅ Agregar autenticación
-6. ✅ Configurar emails de notificación
-7. ✅ Monitorear logs y errores
+1. ✅ **Configurar PostgreSQL** (OBLIGATORIO - ver sección arriba)
+2. ✅ Ejecutar migraciones de Prisma
+3. ✅ Configurar dominio personalizado
+4. ✅ Configurar SSL/HTTPS (automático en Easypanel)
+5. ✅ Configurar backups automáticos de BD
+6. ✅ Agregar autenticación
+7. ✅ Configurar emails de notificación
+8. ✅ Monitorear logs y errores
 
 ---
 
