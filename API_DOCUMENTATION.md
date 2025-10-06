@@ -32,6 +32,9 @@ Obtiene una lista de todas las reservas con filtros opcionales.
 | `date` | string | Filtrar por fecha (YYYY-MM-DD) | `2024-10-04` |
 | `status` | string | Filtrar por estado | `pending`, `confirmed`, `seated`, `completed`, `cancelled` |
 | `tableId` | string | Filtrar por mesa asignada | `table-1` |
+| `name` | string | Buscar por nombre del cliente (contiene, case-insensitive) | `ana` |
+| `phone` | string | Buscar por teléfono del cliente (contiene) | `+34 600` |
+| `time` | string | Filtrar por hora exacta (HH:MM) | `20:00` |
 
 **Respuesta exitosa (200):**
 ```json

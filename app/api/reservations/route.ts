@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const status = searchParams.get('status');
     const tableId = searchParams.get('tableId');
+    const name = searchParams.get('name') || searchParams.get('customerName');
+    const phone = searchParams.get('phone') || searchParams.get('customerPhone');
+    const time = searchParams.get('time');
 
     const where: any = {};
     if (status) where.status = status;
@@ -18,6 +21,15 @@ export async function GET(request: NextRequest) {
       const end = new Date(start);
       end.setDate(end.getDate() + 1);
       where.date = { gte: start, lt: end };
+    }
+    if (time) {
+      where.time = time;
+    }
+    if (name) {
+      where.customerName = { contains: name, mode: 'insensitive' };
+    }
+    if (phone) {
+      where.customerPhone = { contains: phone };
     }
 
     const data = await prisma.reservation.findMany({
