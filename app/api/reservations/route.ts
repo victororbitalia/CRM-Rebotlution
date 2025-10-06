@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Reservation } from '@/types';
-
-// Simulación de base de datos (en producción usarías una BD real)
-let reservations: Reservation[] = [];
+import { prisma } from '@/lib/prisma';
 
 // GET /api/reservations - Listar todas las reservas con filtros opcionales
 export async function GET(request: NextRequest) {
@@ -12,32 +9,23 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const tableId = searchParams.get('tableId');
 
-    let filtered = [...reservations];
-
-    // Filtrar por fecha
+    const where: any = {};
+    if (status) where.status = status;
+    if (tableId) where.tableId = tableId;
     if (date) {
-      const filterDate = new Date(date);
-      filtered = filtered.filter(r => {
-        const resDate = new Date(r.date);
-        return resDate.toDateString() === filterDate.toDateString();
-      });
+      const start = new Date(date);
+      start.setHours(0,0,0,0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      where.date = { gte: start, lt: end };
     }
 
-    // Filtrar por estado
-    if (status) {
-      filtered = filtered.filter(r => r.status === status);
-    }
-
-    // Filtrar por mesa
-    if (tableId) {
-      filtered = filtered.filter(r => r.tableId === tableId);
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: filtered,
-      count: filtered.length,
+    const data = await prisma.reservation.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
     });
+
+    return NextResponse.json({ success: true, data, count: data.length });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error al obtener reservas' },
@@ -82,31 +70,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear nueva reserva
-    const newReservation: Reservation = {
-      id: `res-${Date.now()}`,
-      customerName: body.customerName,
-      customerEmail: body.customerEmail,
-      customerPhone: body.customerPhone,
-      date: new Date(body.date),
-      time: body.time,
-      guests: body.guests,
-      tableId: body.tableId || undefined,
-      status: body.status || 'pending',
-      specialRequests: body.specialRequests || undefined,
-      createdAt: new Date(),
-    };
-
-    reservations.push(newReservation);
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: newReservation,
-        message: 'Reserva creada exitosamente',
+    const newReservation = await prisma.reservation.create({
+      data: {
+        customerName: body.customerName,
+        customerEmail: body.customerEmail,
+        customerPhone: body.customerPhone,
+        date: new Date(body.date),
+        time: body.time,
+        guests: body.guests,
+        tableId: body.tableId || undefined,
+        status: body.status || 'pending',
+        specialRequests: body.specialRequests || undefined,
       },
-      { status: 201 }
-    );
+    });
+
+    return NextResponse.json({ success: true, data: newReservation, message: 'Reserva creada exitosamente' }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error al crear la reserva' },

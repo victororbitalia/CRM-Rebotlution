@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Reservation, ReservationStatus } from '@/types';
-
-// Simulación de base de datos
-let reservations: Reservation[] = [];
+import { ReservationStatus } from '@/types';
+import { prisma } from '@/lib/prisma';
 
 // PATCH /api/reservations/:id/status - Cambiar estado de reserva
 export async function PATCH(
@@ -11,13 +9,9 @@ export async function PATCH(
 ) {
   try {
     const body = await request.json();
-    const index = reservations.findIndex(r => r.id === params.id);
-
-    if (index === -1) {
-      return NextResponse.json(
-        { success: false, error: 'Reserva no encontrada' },
-        { status: 404 }
-      );
+    const exists = await prisma.reservation.findUnique({ where: { id: params.id } });
+    if (!exists) {
+      return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 });
     }
 
     // Validar estado
@@ -32,14 +26,12 @@ export async function PATCH(
       );
     }
 
-    // Actualizar solo el estado
-    reservations[index].status = body.status;
-
-    return NextResponse.json({
-      success: true,
-      data: reservations[index],
-      message: `Estado actualizado a: ${body.status}`,
+    const updated = await prisma.reservation.update({
+      where: { id: params.id },
+      data: { status: body.status },
     });
+
+    return NextResponse.json({ success: true, data: updated, message: `Estado actualizado a: ${body.status}` });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error al actualizar el estado' },

@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Reservation } from '@/types';
-
-// Simulación de base de datos
-let reservations: Reservation[] = [];
+import { prisma } from '@/lib/prisma';
 
 // GET /api/reservations/:id - Obtener una reserva específica
 export async function GET(
@@ -10,7 +7,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const reservation = reservations.find(r => r.id === params.id);
+    const reservation = await prisma.reservation.findUnique({ where: { id: params.id } });
 
     if (!reservation) {
       return NextResponse.json(
@@ -38,13 +35,9 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const index = reservations.findIndex(r => r.id === params.id);
-
-    if (index === -1) {
-      return NextResponse.json(
-        { success: false, error: 'Reserva no encontrada' },
-        { status: 404 }
-      );
+    const exists = await prisma.reservation.findUnique({ where: { id: params.id } });
+    if (!exists) {
+      return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 });
     }
 
     // Validaciones
@@ -65,22 +58,22 @@ export async function PUT(
       }
     }
 
-    // Actualizar reserva
-    const updatedReservation: Reservation = {
-      ...reservations[index],
-      ...body,
-      id: params.id, // Mantener el ID original
-      createdAt: reservations[index].createdAt, // Mantener fecha de creación
-      date: body.date ? new Date(body.date) : reservations[index].date,
-    };
-
-    reservations[index] = updatedReservation;
-
-    return NextResponse.json({
-      success: true,
-      data: updatedReservation,
-      message: 'Reserva actualizada exitosamente',
+    const updatedReservation = await prisma.reservation.update({
+      where: { id: params.id },
+      data: {
+        customerName: body.customerName ?? undefined,
+        customerEmail: body.customerEmail ?? undefined,
+        customerPhone: body.customerPhone ?? undefined,
+        date: body.date ? new Date(body.date) : undefined,
+        time: body.time ?? undefined,
+        guests: body.guests ?? undefined,
+        tableId: body.tableId ?? undefined,
+        status: body.status ?? undefined,
+        specialRequests: body.specialRequests ?? undefined,
+      },
     });
+
+    return NextResponse.json({ success: true, data: updatedReservation, message: 'Reserva actualizada exitosamente' });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error al actualizar la reserva' },
@@ -95,23 +88,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const index = reservations.findIndex(r => r.id === params.id);
-
-    if (index === -1) {
-      return NextResponse.json(
-        { success: false, error: 'Reserva no encontrada' },
-        { status: 404 }
-      );
+    const exists = await prisma.reservation.findUnique({ where: { id: params.id } });
+    if (!exists) {
+      return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 });
     }
 
-    const deletedReservation = reservations[index];
-    reservations.splice(index, 1);
-
-    return NextResponse.json({
-      success: true,
-      data: deletedReservation,
-      message: 'Reserva eliminada exitosamente',
-    });
+    const deletedReservation = await prisma.reservation.delete({ where: { id: params.id } });
+    return NextResponse.json({ success: true, data: deletedReservation, message: 'Reserva eliminada exitosamente' });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Error al eliminar la reserva' },

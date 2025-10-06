@@ -6,9 +6,10 @@ import { useMemo, useState } from 'react';
 import { Table } from '@/types';
 
 export default function TablesPage() {
-  const { tables, reservations } = useRestaurant();
+  const { tables, reservations, createTable, toggleTableAvailability } = useRestaurant();
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [newTable, setNewTable] = useState({ number: '', capacity: '', location: 'interior' as Table['location'] });
 
   const tablesByLocation = useMemo(() => {
     const grouped: Record<string, Table[]> = {
@@ -194,6 +195,14 @@ export default function TablesPage() {
                               : 'Ocupada'}
                           </span>
                         </div>
+                        <div className="mt-3">
+                          <button
+                            onClick={() => toggleTableAvailability(table.id, !table.isAvailable)}
+                            className="text-xs px-3 py-1.5 rounded border bg-white hover:bg-gray-50"
+                          >
+                            {table.isAvailable ? 'Marcar Ocupada' : 'Marcar Disponible'}
+                          </button>
+                        </div>
                         {hasReservation && (
                           <div className="mt-2 text-xs text-[var(--text-secondary)]">
                             {tableReservations.map(res => (
@@ -258,6 +267,14 @@ export default function TablesPage() {
                           : 'Ocupada'}
                       </span>
                     </div>
+                    <div className="mt-3">
+                      <button
+                        onClick={() => toggleTableAvailability(table.id, !table.isAvailable)}
+                        className="text-xs px-3 py-1.5 rounded border bg-white hover:bg-gray-50"
+                      >
+                        {table.isAvailable ? 'Marcar Ocupada' : 'Marcar Disponible'}
+                      </button>
+                    </div>
                     {hasReservation && (
                       <div className="mt-2 text-xs text-[var(--text-secondary)]">
                         {tableReservations.map(res => (
@@ -275,6 +292,50 @@ export default function TablesPage() {
         </div>
       )}
 
+      {/* Crear nueva mesa */}
+      <div className="mt-6 card p-6">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Crear Mesa</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <input
+            type="number"
+            className="input-field"
+            placeholder="Número"
+            value={newTable.number}
+            onChange={(e) => setNewTable({ ...newTable, number: e.target.value })}
+          />
+          <input
+            type="number"
+            className="input-field"
+            placeholder="Capacidad"
+            value={newTable.capacity}
+            onChange={(e) => setNewTable({ ...newTable, capacity: e.target.value })}
+          />
+          <select
+            className="input-field"
+            value={newTable.location}
+            onChange={(e) => setNewTable({ ...newTable, location: e.target.value as Table['location'] })}
+          >
+            <option value="interior">Interior</option>
+            <option value="exterior">Exterior</option>
+            <option value="terraza">Terraza</option>
+            <option value="privado">Privado</option>
+          </select>
+          <button
+            className="btn-primary"
+            onClick={async () => {
+              if (!newTable.number || !newTable.capacity) return;
+              await createTable({
+                number: parseInt(newTable.number, 10),
+                capacity: parseInt(newTable.capacity, 10),
+                location: newTable.location,
+              });
+              setNewTable({ number: '', capacity: '', location: 'interior' });
+            }}
+          >
+            Crear Mesa
+          </button>
+        </div>
+      </div>
       <div className="mt-6 card p-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
           Reservas para {new Date(selectedDate).toLocaleDateString('es-ES', { 
