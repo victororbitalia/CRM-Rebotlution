@@ -143,7 +143,15 @@ export async function POST(request: NextRequest) {
         status: {
           in: ['pending', 'confirmed']
         }
-      }
+      },
+      select: {
+        id: true,
+        guests: true,
+        status: true,
+        date: true,
+        time: true,
+        tableId: true,
+      },
     });
 
     // Verificar límite de reservas
