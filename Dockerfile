@@ -8,9 +8,8 @@ WORKDIR /app
 
 # Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
-# Evitar que prisma generate se ejecute en postinstall durante la instalación de dependencias
-ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
-RUN npm install --no-audit --no-fund
+# Instalar dependencias sin ejecutar scripts (evita postinstall/prisma generate)
+RUN npm ci --no-audit --no-fund --ignore-scripts || npm install --no-audit --no-fund --ignore-scripts
 
 # Etapa 2: Builder
 FROM node:18-alpine AS builder
