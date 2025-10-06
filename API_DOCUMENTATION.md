@@ -196,8 +196,8 @@ curl -X POST http://localhost:3001/api/reservations \
 
 ---
 
-### 4. Actualizar reserva completa
-Actualiza todos los datos de una reserva existente.
+### 4. Actualizar reserva (parcial)
+Actualiza los datos de una reserva existente. Solo se actualizan los campos enviados; los campos omitidos permanecen sin cambios. Los campos opcionales enviados como `null` se limpian.
 
 **Endpoint:** `PUT /api/reservations/:id`
 
@@ -240,6 +240,32 @@ Actualiza todos los datos de una reserva existente.
   },
   "message": "Reserva actualizada exitosamente"
 }
+```
+
+Notas importantes:
+- Los campos no incluidos en el body no se modifican.
+- Para limpiar un campo opcional como `specialRequests`, envía el valor `null`.
+- Si solo vas a cambiar el estado, también puedes usar el endpoint específico `PATCH /api/reservations/:id/status`.
+
+Ejemplos adicionales:
+
+1) Actualizar solo teléfono y hora
+```bash
+curl -X PUT http://localhost:3001/api/reservations/res-1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerPhone": "+34 600 222 111",
+    "time": "22:00"
+  }'
+```
+
+2) Borrar notas (`specialRequests`)
+```bash
+curl -X PUT http://localhost:3001/api/reservations/res-1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "specialRequests": null
+  }'
 ```
 
 **Ejemplo de uso:**
