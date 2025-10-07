@@ -159,6 +159,8 @@ Crea una nueva reserva en el sistema con validación de capacidad.
 - ✅ Valida límite de comensales totales por día (`maxGuestsTotal`)
 - ✅ Verifica disponibilidad de mesa específica (si se proporciona)
 - ✅ Valida que la mesa no esté ya reservada en la misma fecha y hora
+- ✅ Valida que la fecha no sea pasada (no se permiten reservas en el pasado)
+- ✅ Valida `maxAdvanceDays` de la configuración (no se permiten reservas con más anticipación que el permitido)
 
 **Respuesta exitosa (201):**
 ```json
@@ -215,6 +217,22 @@ Crea una nueva reserva en el sistema con validación de capacidad.
     "requestedGuests": 8,
     "availableGuests": 5
   }
+}
+```
+
+**Error: Fecha pasada:**
+```json
+{
+  "success": false,
+  "error": "No se pueden crear reservas en fechas pasadas"
+}
+```
+
+**Error: Excede máximo de días de antelación:**
+```json
+{
+  "success": false,
+  "error": "No se pueden crear reservas con más de 30 días de anticipación"
 }
 ```
 

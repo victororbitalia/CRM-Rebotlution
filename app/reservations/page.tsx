@@ -3,7 +3,7 @@
 import { useRestaurant } from '@/context/RestaurantContext';
 import ReservationCard from '@/components/ReservationCard';
 import { PlusIcon, XIcon, FilterIcon, SearchIcon } from '@/components/Icons';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Reservation } from '@/types';
 
 export default function ReservationsPage() {
@@ -22,6 +22,14 @@ export default function ReservationsPage() {
     preferredLocation: 'any',
     specialRequests: '',
   });
+  // Widget: fecha y hora actuales para el gestor
+  const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
+  useEffect(() => {
+    const tick = () => setCurrentDateTime(new Date());
+    // Actualizar cada minuto para mantener la hora visible
+    const id = setInterval(tick, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +126,15 @@ export default function ReservationsPage() {
           <p className="text-sm text-[var(--text-secondary)]">
             Administra todas las reservas del restaurante
           </p>
+        </div>
+        {/* Widget fecha y hora actual */}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-[var(--text-secondary)]">
+            <div className="font-medium text-[var(--text-primary)]">
+              {new Date(currentDateTime).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/(^\w)/, c => c.toUpperCase())}
+            </div>
+            <div className="text-xs">{currentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -318,7 +335,14 @@ export default function ReservationsPage() {
               map.get(key)!.push(r);
               return map;
             }, new Map<string, typeof filteredReservations>()).entries()
-          ).map(([dateKey, group]) => (
+          )
+            .sort((a, b) => {
+              // Ordenar grupos por fecha descendente: más reciente primero
+              const aDate = new Date(a[1][0].date).getTime();
+              const bDate = new Date(b[1][0].date).getTime();
+              return bDate - aDate;
+            })
+            .map(([dateKey, group]) => (
             <div key={dateKey}>
               <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-primary)]/60">
                 <h2 className="text-sm font-semibold text-[var(--text-secondary)] tracking-wide mb-3">

@@ -103,6 +103,19 @@ export async function POST(request: NextRequest) {
 
     // Validar capacidad del restaurante
     const reservationDate = new Date(body.date);
+    const now = new Date();
+
+    // Validación: no permitir reservas en fechas pasadas
+    const startOfRequestedDay = new Date(reservationDate);
+    startOfRequestedDay.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+    if (reservationDate < now && reservationDate < endOfToday) {
+      return NextResponse.json(
+        { success: false, error: 'No se pueden crear reservas en fechas pasadas' },
+        { status: 409 }
+      );
+    }
     const dayOfWeek = reservationDate.getDay(); // 0 = domingo, 1 = lunes, etc.
     const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const weekdayRules = settings.weekdayRules as any;
@@ -127,6 +140,17 @@ export async function POST(request: NextRequest) {
     const dayRules = weekdayRules[dayKey];
     const maxReservations = dayRules.maxReservations || 50;
     const maxGuestsTotal = dayRules.maxGuestsTotal || 100;
+
+    // Validación: respetar maxAdvanceDays de configuración global
+    const maxAdvanceDays = (settings.reservations && settings.reservations.maxAdvanceDays) || 365;
+    const diffMs = reservationDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays > maxAdvanceDays) {
+      return NextResponse.json(
+        { success: false, error: `No se pueden crear reservas con más de ${maxAdvanceDays} días de anticipación` },
+        { status: 409 }
+      );
+    }
 
     // Contar reservas existentes para la fecha
     const startOfDay = new Date(reservationDate);
