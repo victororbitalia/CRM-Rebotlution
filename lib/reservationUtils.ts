@@ -22,10 +22,10 @@ export function classifyAndGroupReservations(
       continue;
     }
     // Extraer componentes de fecha de forma estable (usar UTC para no desplazar día)
-    const d = new Date(r.date);
-    const year = d.getUTCFullYear();
-    const month = d.getUTCMonth() + 1; // 1-12
-    const day = d.getUTCDate();
+    const base = DateTime.fromJSDate(new Date(r.date)).setZone(timezone);
+    const year = base.year;
+    const month = base.month;
+    const day = base.day;
     const [hourStr, minuteStr] = r.time.split(':');
     const hour = parseInt(hourStr, 10) || 0;
     const minute = parseInt(minuteStr, 10) || 0;
@@ -39,24 +39,25 @@ export function classifyAndGroupReservations(
 
   // Sort upcoming asc by datetime, past desc
   upcoming.sort((a, b) => {
-    const ad = new Date(a.date); const bd = new Date(b.date);
-    const aDt = DateTime.fromObject({ year: ad.getUTCFullYear(), month: ad.getUTCMonth() + 1, day: ad.getUTCDate(), hour: parseInt(a.time.split(':')[0], 10) || 0, minute: parseInt(a.time.split(':')[1], 10) || 0 }, { zone: timezone });
-    const bDt = DateTime.fromObject({ year: bd.getUTCFullYear(), month: bd.getUTCMonth() + 1, day: bd.getUTCDate(), hour: parseInt(b.time.split(':')[0], 10) || 0, minute: parseInt(b.time.split(':')[1], 10) || 0 }, { zone: timezone });
+    const aBase = DateTime.fromJSDate(new Date(a.date)).setZone(timezone);
+    const bBase = DateTime.fromJSDate(new Date(b.date)).setZone(timezone);
+    const aDt = aBase.set({ hour: parseInt(a.time.split(':')[0], 10) || 0, minute: parseInt(a.time.split(':')[1], 10) || 0 });
+    const bDt = bBase.set({ hour: parseInt(b.time.split(':')[0], 10) || 0, minute: parseInt(b.time.split(':')[1], 10) || 0 });
     return aDt.toMillis() - bDt.toMillis();
   });
 
   past.sort((a, b) => {
-    const ad = new Date(a.date); const bd = new Date(b.date);
-    const aDt = DateTime.fromObject({ year: ad.getUTCFullYear(), month: ad.getUTCMonth() + 1, day: ad.getUTCDate(), hour: parseInt(a.time?.split(':')[0] || '0', 10), minute: parseInt(a.time?.split(':')[1] || '0', 10) }, { zone: timezone });
-    const bDt = DateTime.fromObject({ year: bd.getUTCFullYear(), month: bd.getUTCMonth() + 1, day: bd.getUTCDate(), hour: parseInt(b.time?.split(':')[0] || '0', 10), minute: parseInt(b.time?.split(':')[1] || '0', 10) }, { zone: timezone });
+    const aBase = DateTime.fromJSDate(new Date(a.date)).setZone(timezone);
+    const bBase = DateTime.fromJSDate(new Date(b.date)).setZone(timezone);
+    const aDt = aBase.set({ hour: parseInt(a.time?.split(':')[0] || '0', 10), minute: parseInt(a.time?.split(':')[1] || '0', 10) });
+    const bDt = bBase.set({ hour: parseInt(b.time?.split(':')[0] || '0', 10), minute: parseInt(b.time?.split(':')[1] || '0', 10) });
     return bDt.toMillis() - aDt.toMillis();
   });
 
   const groupByDay = (arr: Reservation[]) => {
     const map = new Map<string, Reservation[]>();
     for (const r of arr) {
-      const d = new Date(r.date);
-      const dt = DateTime.fromObject({ year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() }, { zone: timezone });
+      const dt = DateTime.fromJSDate(new Date(r.date)).setZone(timezone);
       const key = dt.toISODate();
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
@@ -70,10 +71,19 @@ export function classifyAndGroupReservations(
     return groups;
   };
 
-  const upcomingGroups = groupByDay(upcoming).sort((a, b) => a.key.localeCompare(b.key));
+  const upcomingGroups = groupByDay(upcoming).sort((a, b) => {
+    const aMs = DateTime.fromISO(a.key, { zone: timezone }).toMillis();
+    const bMs = DateTime.fromISO(b.key, { zone: timezone }).toMillis();
+    return aMs - bMs; // ascendente
+  });
+
   const pastGroups = groupByDay(past)
     .map(g => ({ ...g, reservations: [...g.reservations].sort((a, b) => (b.time || '').localeCompare(a.time || '')) }))
-    .sort((a, b) => b.key.localeCompare(a.key));
+    .sort((a, b) => {
+      const aMs = DateTime.fromISO(a.key, { zone: timezone }).toMillis();
+      const bMs = DateTime.fromISO(b.key, { zone: timezone }).toMillis();
+      return bMs - aMs; // descendente
+    });
 
   return { upcomingGroups, pastGroups };
 }
