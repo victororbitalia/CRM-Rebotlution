@@ -7,6 +7,7 @@ import { mockReservations, mockTables } from '@/lib/mockData';
 interface RestaurantContextType {
   reservations: Reservation[];
   tables: Table[];
+  settings?: any;
   addReservation: (reservation: Omit<Reservation, 'id' | 'createdAt'>) => Promise<void>;
   updateReservation: (id: string, updates: Partial<Reservation>) => Promise<void>;
   deleteReservation: (id: string) => Promise<void>;
@@ -20,6 +21,7 @@ const RestaurantContext = createContext<RestaurantContextType | undefined>(undef
 export function RestaurantProvider({ children }: { children: React.ReactNode }) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
+  const [settings, setSettings] = useState<any>(null);
 
   // Cargar reservas desde la API al montar
   useEffect(() => {
@@ -50,8 +52,16 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
         // mantener vacío en caso de error
       }
     };
+    const loadSettings = async () => {
+      try {
+        const res = await fetch('/api/settings', { cache: 'no-store' });
+        const json = await res.json();
+        if (json?.success) setSettings(json.data);
+      } catch (e) {}
+    };
     loadReservations();
     loadTables();
+    loadSettings();
   }, []);
 
   const addReservation = async (reservation: Omit<Reservation, 'id' | 'createdAt'>) => {
@@ -151,6 +161,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
       value={{
         reservations,
         tables,
+        settings,
         addReservation,
         updateReservation,
         deleteReservation,

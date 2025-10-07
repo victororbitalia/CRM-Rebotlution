@@ -2,6 +2,7 @@
 
 export interface RestaurantSettings {
   id: string;
+  timezone?: string; // IANA timezone, e.g. 'Europe/Madrid'
   
   // Información básica
   restaurantName: string;
