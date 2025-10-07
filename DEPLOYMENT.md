@@ -264,6 +264,26 @@ ports:
 2. Verifica que `package.json` tenga todas las dependencias
 3. Prueba build local: `npm run build`
 
+### Puntos Críticos del Proceso de Build
+
+Durante el despliegue, el proceso de `build` (`npm run build`) es mucho más estricto que en el entorno de desarrollo local. Aquí hay varios puntos clave a tener en cuenta para evitar fallos:
+
+1.  **Sincronización de Paquetes (`package-lock.json`):**
+    *   **Problema:** El `build` puede fallar si `package.json` y `package-lock.json` no están sincronizados.
+    *   **Solución:** Antes de subir los cambios (`git push`), asegúrate siempre de que el fichero `package-lock.json` esté actualizado. Si instalas o actualizas un paquete localmente, sube siempre ambos ficheros al repositorio. Un `npm install` local antes de subir los cambios puede ayudar a regenerarlo.
+
+2.  **Migraciones de Base de Datos (Prisma):**
+    *   **Problema:** El código puede hacer referencia a columnas de la base de datos (ej: `preferredLocation`) que aún no existen en el entorno de producción, causando errores 500 o fallos en el `build`.
+    *   **Solución:** Asegúrate de que tu proceso de despliegue ejecute automáticamente las migraciones de Prisma. En Easypanel o Docker, esto se puede hacer añadiendo `npx prisma migrate deploy` al comando de inicio del contenedor.
+
+3.  **Tipos de TypeScript (`@types/*`):**
+    *   **Problema:** El `build` fallará si usas una librería de JavaScript (como `luxon`) pero no has instalado sus definiciones de tipos correspondientes para TypeScript.
+    *   **Solución:** Si ves un error como `Could not find a declaration file for module '...'`, necesitas instalar los tipos. Por ejemplo: `npm i --save-dev @types/luxon`.
+
+4.  **Errores de Nulabilidad y Tipos Estrictos:**
+    *   **Problema:** El compilador de TypeScript en modo `build` es muy estricto. Detectará si una función puede devolver `null` y el código no lo está manejando, aunque en desarrollo no de problemas.
+    *   **Solución:** Revisa el código y añade comprobaciones para los valores que puedan ser nulos. Por ejemplo, si una variable `key` puede ser `string | null`, envuélvela en una condición: `if (key) { ... }`.
+
 ### La app no carga estilos
 
 Verifica que en `next.config.js` esté:
