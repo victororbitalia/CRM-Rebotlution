@@ -62,14 +62,20 @@ export function classifyAndGroupReservations(
       map.get(key)!.push(r);
     }
 
-    const groups: GroupedReservations[] = Array.from(map.entries()).map(([key, reservations]) => ({ key, reservations }));
+    // Ordenar reservas dentro de cada grupo por hora ascendente
+    const groups: GroupedReservations[] = Array.from(map.entries()).map(([key, reservations]) => {
+      reservations.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      return { key, reservations };
+    });
     return groups;
   };
 
-  return {
-    upcomingGroups: groupByDay(upcoming),
-    pastGroups: groupByDay(past),
-  };
+  const upcomingGroups = groupByDay(upcoming).sort((a, b) => a.key.localeCompare(b.key));
+  const pastGroups = groupByDay(past)
+    .map(g => ({ ...g, reservations: [...g.reservations].sort((a, b) => (b.time || '').localeCompare(a.time || '')) }))
+    .sort((a, b) => b.key.localeCompare(a.key));
+
+  return { upcomingGroups, pastGroups };
 }
 
 export default {};
