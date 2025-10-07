@@ -26,6 +26,7 @@ export interface RestaurantSettings {
     requireConfirmation: boolean; // Requiere confirmación del restaurante
     autoConfirmAfterMinutes: number; // Auto-confirmar después de X minutos
     defaultPreferredLocation?: TableLocation | 'any'; // Ubicación por defecto para asignación automática
+    timezone?: string; // IANA timezone, e.g. 'Europe/Madrid'
   };
   
   // Configuración de mesas
