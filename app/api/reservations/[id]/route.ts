@@ -73,6 +73,21 @@ export async function PUT(
       }
     }
 
+    // Validar fecha si se envía
+    if (body.date && isNaN(Date.parse(body.date))) {
+      return NextResponse.json({ success: false, error: 'Fecha inválida' }, { status: 400 });
+    }
+
+    // Validar formato de hora HH:MM si se envía
+    if (body.time && !/^\d{1,2}:\d{2}$/.test(body.time)) {
+      return NextResponse.json({ success: false, error: 'Hora inválida (formato HH:MM)' }, { status: 400 });
+    }
+
+    // Validar estado si se envía
+    if (body.status && !['pending','confirmed','seated','completed','cancelled'].includes(body.status)) {
+      return NextResponse.json({ success: false, error: 'Estado de reserva inválido' }, { status: 400 });
+    }
+
     const updatedReservation = await prisma.reservation.update({
       where: { id: params.id },
       data: {
@@ -103,6 +118,13 @@ export async function PUT(
 
     return NextResponse.json({ success: true, data: updatedReservation, message: 'Reserva actualizada exitosamente' });
   } catch (error) {
+    // Loguear detalle para diagnóstico en servidor
+    try {
+      console.error('PUT /api/reservations/:id - Error al actualizar reserva', { id: params.id, body: (await request.clone().json()) });
+    } catch (e) {
+      console.error('PUT /api/reservations/:id - Error al actualizar reserva (no se pudo parsear body)', { id: params.id, err: e });
+    }
+    console.error(error);
     return NextResponse.json(
       { success: false, error: 'Error al actualizar la reserva' },
       { status: 500 }
