@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const body = await request.json();
-    const exists = await prisma.reservation.findUnique({ where: { id: params.id } });
+    const exists = await prisma.reservation.findUnique({ where: { id: params.id }, select: { id: true } });
     if (!exists) {
       return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 });
     }
@@ -29,6 +29,7 @@ export async function PATCH(
     const updated = await prisma.reservation.update({
       where: { id: params.id },
       data: { status: body.status },
+      select: { id: true, status: true },
     });
 
     return NextResponse.json({ success: true, data: updated, message: `Estado actualizado a: ${body.status}` });

@@ -50,7 +50,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const exists = await prisma.reservation.findUnique({ where: { id: params.id } });
+    const exists = await prisma.reservation.findUnique({ where: { id: params.id }, select: { id: true } });
     if (!exists) {
       return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 });
     }
@@ -138,7 +138,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const exists = await prisma.reservation.findUnique({ where: { id: params.id } });
+    const exists = await prisma.reservation.findUnique({ where: { id: params.id }, select: { id: true } });
     if (!exists) {
       return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 });
     }
