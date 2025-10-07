@@ -56,12 +56,16 @@ export function classifyAndGroupReservations(
 
   const groupByDay = (arr: Reservation[]) => {
     const map = new Map<string, Reservation[]>();
-    for (const r of arr) {
-      const dt = DateTime.fromJSDate(new Date(r.date)).setZone(timezone);
-      const key = dt.toISODate();
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(r);
-    }
+    arr.forEach(r => {
+      if (r.date) {
+        const dt = DateTime.fromJSDate(new Date(r.date)).setZone(timezone);
+        const key = dt.toISODate();
+        if (key) { // Comprobar que la clave no es nula
+          if (!map.has(key)) map.set(key, []);
+          map.get(key)!.push(r);
+        }
+      }
+    });
 
     // Ordenar reservas dentro de cada grupo por hora ascendente
     const groups: GroupedReservations[] = Array.from(map.entries()).map(([key, reservations]) => {
