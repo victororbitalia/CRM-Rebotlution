@@ -12,6 +12,7 @@ export default function ReservationsPage() {
   const [showForm, setShowForm] = useState(false);
   const [filterDate, setFilterDate] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -32,33 +33,39 @@ export default function ReservationsPage() {
     return () => clearInterval(id);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null); // Limpiar error anterior
 
-    addReservation({
-      customerName: formData.customerName,
-      customerEmail: formData.customerEmail,
-      customerPhone: formData.customerPhone,
-      date: new Date(formData.date),
-      time: formData.time,
-      guests: formData.guests,
-      preferredLocation: formData.preferredLocation as any,
-      // Reservas creadas manualmente desde el Dashboard quedan confirmadas por defecto
-      status: 'confirmed',
-      specialRequests: formData.specialRequests || undefined,
-    });
+    try {
+      await addReservation({
+        customerName: formData.customerName,
+        customerEmail: formData.customerEmail,
+        customerPhone: formData.customerPhone,
+        date: new Date(formData.date),
+        time: formData.time,
+        guests: formData.guests,
+        preferredLocation: formData.preferredLocation as any,
+        // Reservas creadas manualmente desde el Dashboard quedan confirmadas por defecto
+        status: 'confirmed',
+        specialRequests: formData.specialRequests || undefined,
+      });
 
-    setFormData({
-      customerName: '',
-      customerEmail: '',
-      customerPhone: '',
-      date: '',
-      time: '',
-      guests: 2,
-      preferredLocation: 'any',
-      specialRequests: '',
-    });
-    setShowForm(false);
+      setFormData({
+        customerName: '',
+        customerEmail: '',
+        customerPhone: '',
+        date: '',
+        time: '',
+        guests: 2,
+        preferredLocation: 'any',
+        specialRequests: '',
+      });
+      setShowForm(false);
+    } catch (error: any) {
+      console.error('Error al crear la reserva:', error);
+      setFormError(error.message || 'Ocurrió un error inesperado.');
+    }
   };
 
   const filteredReservations = useMemo(() => {
@@ -273,6 +280,13 @@ export default function ReservationsPage() {
                 placeholder="Alergias, preferencias de mesa, celebraciones..."
               />
             </div>
+
+            {formError && (
+              <div className="md:col-span-2 bg-red-50 border border-red-200 text-sm text-red-700 rounded-lg p-3" role="alert">
+                <p className="font-bold mb-1">No se pudo crear la reserva</p>
+                <p>{formError}</p>
+              </div>
+            )}
 
             <div className="md:col-span-2">
               <button type="submit" className="w-full btn-primary">
