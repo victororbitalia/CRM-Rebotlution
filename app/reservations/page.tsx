@@ -43,7 +43,8 @@ export default function ReservationsPage() {
       time: formData.time,
       guests: formData.guests,
       preferredLocation: formData.preferredLocation as any,
-      status: 'pending',
+      // Reservas creadas manualmente desde el Dashboard quedan confirmadas por defecto
+      status: 'confirmed',
       specialRequests: formData.specialRequests || undefined,
     });
 

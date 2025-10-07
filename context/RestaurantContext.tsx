@@ -75,7 +75,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     
     const res = await fetch('/api/reservations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Client-Source': 'dashboard' },
       body: JSON.stringify(payload),
     });
     
@@ -98,8 +98,17 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     const payload: any = { ...updates };
     if (updates.date instanceof Date) payload.date = updates.date.toISOString();
 
-    const res = await fetch(`/api/reservations/${id}`, {
-      method: 'PUT',
+    // Si solo actualizamos el estado, usar endpoint dedicado de estado (PATCH)
+    const payloadKeys = Object.keys(payload);
+    const isOnlyStatusUpdate = payloadKeys.length === 1 && payloadKeys[0] === 'status';
+
+    const endpoint = isOnlyStatusUpdate
+      ? `/api/reservations/${id}/status`
+      : `/api/reservations/${id}`;
+    const method = isOnlyStatusUpdate ? 'PATCH' : 'PUT';
+
+    const res = await fetch(endpoint, {
+      method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });

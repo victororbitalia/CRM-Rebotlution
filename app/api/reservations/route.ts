@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log('POST /api/reservations - Body recibido:', body);
+    const clientSource = request.headers.get('x-client-source');
 
     // Validaciones
     if (!body.customerName || !body.customerEmail || !body.customerPhone) {
@@ -300,6 +301,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Creando reserva en BD...');
+    // Si la reserva viene del Dashboard (no hay cabecera especial ni token),
+    // aceptamos "confirmed" si el cliente lo envía; si viene de API externa
+    // (en el futuro podríamos distinguir por cabecera X-Source), por ahora
+    // dejamos que pase lo que envía o default a 'pending'.
     const newReservation = await prisma.reservation.create({
       data: {
         customerName: body.customerName,
@@ -309,7 +314,7 @@ export async function POST(request: NextRequest) {
         time: body.time,
         guests: body.guests,
         tableId: body.tableId || undefined,
-        status: body.status || 'pending',
+        status: clientSource === 'dashboard' ? (body.status || 'confirmed') : (body.status || 'pending'),
         specialRequests: body.specialRequests || undefined,
       },
       select: {
