@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { defaultSettings } from '@/lib/defaultSettings';
+import { DateTime } from 'luxon';
 
 // GET /api/reservations - Listar todas las reservas con filtros opcionales
 export async function GET(request: NextRequest) {
@@ -101,23 +102,25 @@ export async function POST(request: NextRequest) {
     // Obtener configuración del restaurante (singleton); fallback a defaultSettings si no existe
     const settingsRecord = await prisma.restaurantSettings.findUnique({ where: { id: 'settings-singleton' } });
     const settings = (settingsRecord?.data as any) || (defaultSettings as any);
+    const timezone = settings.reservations?.timezone || 'Europe/Madrid';
 
-    // Validar capacidad del restaurante
-    const reservationDate = new Date(body.date);
-    const now = new Date();
+    // Construir la fecha y hora de la reserva en la zona horaria correcta
+    const reservationDateTime = DateTime.fromISO(`${body.date}T${body.time}`, { zone: timezone });
+    const nowInTimezone = DateTime.now().setZone(timezone);
+
+    if (!reservationDateTime.isValid) {
+      return NextResponse.json({ success: false, error: 'La fecha o la hora proporcionada no es válida' }, { status: 400 });
+    }
 
     // Validación: no permitir reservas en fechas pasadas
-    const startOfRequestedDay = new Date(reservationDate);
-    startOfRequestedDay.setHours(0, 0, 0, 0);
-    const endOfToday = new Date(now);
-    endOfToday.setHours(23, 59, 59, 999);
-    if (reservationDate < now && reservationDate < endOfToday) {
+    if (reservationDateTime < nowInTimezone) {
       return NextResponse.json(
         { success: false, error: 'No se pueden crear reservas en fechas pasadas' },
         { status: 409 }
       );
     }
-    const dayOfWeek = reservationDate.getDay(); // 0 = domingo, 1 = lunes, etc.
+    
+    const dayOfWeek = reservationDateTime.weekday % 7; // Luxon: 1-7 (Mon-Sun), JS: 0-6 (Sun-Sat)
     const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const weekdayRules = settings.weekdayRules as any;
 
@@ -144,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     // Validación: respetar maxAdvanceDays de configuración global
     const maxAdvanceDays = (settings.reservations && settings.reservations.maxAdvanceDays) || 365;
-    const diffMs = reservationDate.getTime() - now.getTime();
+    const diffMs = reservationDateTime.toMillis() - nowInTimezone.toMillis();
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     if (diffDays > maxAdvanceDays) {
       return NextResponse.json(
@@ -154,10 +157,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Contar reservas existentes para la fecha
-    const startOfDay = new Date(reservationDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(reservationDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = reservationDateTime.startOf('day').toJSDate();
+    const endOfDay = reservationDateTime.endOf('day').toJSDate();
 
     const existingReservations = await prisma.reservation.findMany({
       where: {
@@ -310,7 +311,7 @@ export async function POST(request: NextRequest) {
         customerName: body.customerName,
         customerEmail: body.customerEmail,
         customerPhone: body.customerPhone,
-        date: new Date(body.date),
+        date: reservationDateTime.toJSDate(),
         time: body.time,
         guests: body.guests,
         tableId: body.tableId || undefined,
