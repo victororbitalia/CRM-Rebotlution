@@ -58,7 +58,7 @@ export default function ReservationCard({ reservation, onStatusChange, onDelete,
       date: new Date(form.date),
       time: form.time,
       guests: Number(form.guests),
-      preferredLocation: form.preferredLocation as any,
+      // preferredLocation: form.preferredLocation as any, // Hotfix: Se deshabilita temporalmente hasta que la migración se aplique en producción.
       specialRequests: form.specialRequests || undefined,
     });
     setIsEditing(false);
