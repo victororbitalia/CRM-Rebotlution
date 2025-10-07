@@ -3,8 +3,9 @@
 import { useRestaurant } from '@/context/RestaurantContext';
 import ReservationCard from '@/components/ReservationCard';
 import { PlusIcon, XIcon, FilterIcon, SearchIcon } from '@/components/Icons';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Reservation } from '@/types';
+import { classifyAndGroupReservations } from '@/lib/reservationUtils';
 
 export default function ReservationsPage() {
   const { reservations, addReservation, updateReservation, deleteReservation } = useRestaurant();
@@ -22,6 +23,14 @@ export default function ReservationsPage() {
     preferredLocation: 'any',
     specialRequests: '',
   });
+  // Widget: fecha y hora actuales para el gestor
+  const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
+  useEffect(() => {
+    const tick = () => setCurrentDateTime(new Date());
+    // Actualizar cada minuto para mantener la hora visible
+    const id = setInterval(tick, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +97,11 @@ export default function ReservationsPage() {
     });
   }, [reservations, filterDate, filterStatus]);
 
+  // Clasificar y agrupar según timezone de settings (fallback Europe/Madrid)
+  const restaurantContext = useRestaurant() as any;
+  const timezone = restaurantContext?.settings?.reservations?.timezone || restaurantContext?.settings?.timezone || 'Europe/Madrid';
+  const { upcomingGroups, pastGroups } = classifyAndGroupReservations(filteredReservations, timezone, new Date());
+
   const handleStatusChange = (id: string, status: Reservation['status']) => {
     updateReservation(id, { status });
   };
@@ -118,6 +132,15 @@ export default function ReservationsPage() {
           <p className="text-sm text-[var(--text-secondary)]">
             Administra todas las reservas del restaurante
           </p>
+        </div>
+        {/* Widget fecha y hora actual */}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-[var(--text-secondary)]">
+            <div className="font-medium text-[var(--text-primary)]">
+              {new Date(currentDateTime).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/(^\w)/, c => c.toUpperCase())}
+            </div>
+            <div className="text-xs">{currentDateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -303,7 +326,8 @@ export default function ReservationsPage() {
         </div>
       </div>
 
-      {filteredReservations.length === 0 ? (
+      {/* Renderizar próximas */}
+      {upcomingGroups.length === 0 && pastGroups.length === 0 ? (
         <div className="card p-12 text-center">
           <p className="text-[var(--text-secondary)] text-base">
             No se encontraron reservas con los filtros seleccionados
@@ -311,22 +335,46 @@ export default function ReservationsPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {Array.from(
-            filteredReservations.reduce((map, r) => {
-              const key = new Date(r.date).toDateString();
-              if (!map.has(key)) map.set(key, [] as typeof filteredReservations);
-              map.get(key)!.push(r);
-              return map;
-            }, new Map<string, typeof filteredReservations>()).entries()
-          ).map(([dateKey, group]) => (
-            <div key={dateKey}>
+          {/* Próximas */}
+          {upcomingGroups.map(group => (
+            <div key={group.key}>
               <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-primary)]/60">
                 <h2 className="text-sm font-semibold text-[var(--text-secondary)] tracking-wide mb-3">
-                  {formatHeaderDate(new Date(group[0].date))}
+                  {formatHeaderDate(new Date(group.key))}
                 </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {group.map(reservation => (
+                {group.reservations.map(reservation => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    onUpdate={(id, updates) => updateReservation(id, updates)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Separador y pasadas (si corresponde) */}
+          {(filterDate === 'all' || filterDate === 'past') && pastGroups.length > 0 && (
+            <div className="py-6">
+              <div className="border-t border-[var(--border-secondary)] pt-4">
+                <h3 className="text-sm text-[var(--text-secondary)]">Reservas pasadas</h3>
+              </div>
+            </div>
+          )}
+
+          {((filterDate === 'all') || (filterDate === 'past')) && pastGroups.map(group => (
+            <div key={group.key}>
+              <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-primary)]/60">
+                <h2 className="text-sm font-semibold text-[var(--text-secondary)] tracking-wide mb-3">
+                  {formatHeaderDate(new Date(group.key))}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {group.reservations.map(reservation => (
                   <ReservationCard
                     key={reservation.id}
                     reservation={reservation}

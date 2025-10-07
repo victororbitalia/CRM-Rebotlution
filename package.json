@@ -17,6 +17,7 @@
     "next": "14.0.4",
     "@prisma/client": "^5.18.0",
     "prisma": "^5.18.0",
+    "luxon": "^3.4.0",
     "react": "^18",
     "react-dom": "^18"
   },

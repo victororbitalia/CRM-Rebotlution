@@ -31,6 +31,7 @@ export const defaultSettings: RestaurantSettings = {
     requireConfirmation: false,
     autoConfirmAfterMinutes: 30,
     defaultPreferredLocation: 'any',
+    timezone: 'Europe/Madrid',
   },
   
   // Configuración de mesas
