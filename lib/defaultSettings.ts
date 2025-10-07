@@ -4,8 +4,8 @@ export const defaultSettings: RestaurantSettings = {
   id: 'settings-1',
   
   // Información básica
-  restaurantName: 'Cofradia Restaurant',
-  email: 'info@cofradia.com',
+  restaurantName: 'REBOTLUTION Restaurant',
+  email: 'info@rebotlution.com',
   phone: '+34 900 123 456',
   address: 'Calle Principal, 123, Madrid',
   
@@ -30,6 +30,7 @@ export const defaultSettings: RestaurantSettings = {
     allowWaitlist: true,
     requireConfirmation: false,
     autoConfirmAfterMinutes: 30,
+    defaultPreferredLocation: 'any',
   },
   
   // Configuración de mesas

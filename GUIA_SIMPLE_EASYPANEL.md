@@ -266,7 +266,7 @@ Después del despliegue:
 
 ## 🎉 ¡Felicidades!
 
-Tu aplicación **Cofradia CRM** está ahora en Internet y funcionando 24/7.
+Tu aplicación **REBOTLUTION CRM** está ahora en Internet y funcionando 24/7.
 
 **¿Qué sigue?**
 

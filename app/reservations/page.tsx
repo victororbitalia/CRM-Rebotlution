@@ -19,6 +19,7 @@ export default function ReservationsPage() {
     date: '',
     time: '',
     guests: 2,
+    preferredLocation: 'any',
     specialRequests: '',
   });
 
@@ -32,6 +33,7 @@ export default function ReservationsPage() {
       date: new Date(formData.date),
       time: formData.time,
       guests: formData.guests,
+      preferredLocation: formData.preferredLocation as any,
       status: 'pending',
       specialRequests: formData.specialRequests || undefined,
     });
@@ -43,6 +45,7 @@ export default function ReservationsPage() {
       date: '',
       time: '',
       guests: 2,
+      preferredLocation: 'any',
       specialRequests: '',
     });
     setShowForm(false);
@@ -93,6 +96,16 @@ export default function ReservationsPage() {
     if (confirm('¿Estás seguro de que quieres eliminar esta reserva?')) {
       deleteReservation(id);
     }
+  };
+
+  const formatHeaderDate = (date: Date) => {
+    const formatted = new Intl.DateTimeFormat('es-ES', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   };
 
   return (
@@ -204,6 +217,26 @@ export default function ReservationsPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                Ubicación Preferida
+              </label>
+              <select
+                value={formData.preferredLocation}
+                onChange={(e) => setFormData({ ...formData, preferredLocation: e.target.value })}
+                className="input-field"
+              >
+                <option value="any">Cualquiera</option>
+                <option value="interior">Interior</option>
+                <option value="exterior">Exterior</option>
+                <option value="terraza">Terraza</option>
+                <option value="privado">Privado</option>
+              </select>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                Se asignará mesa automáticamente según esta preferencia
+              </p>
+            </div>
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                 Peticiones Especiales
@@ -277,14 +310,33 @@ export default function ReservationsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredReservations.map(reservation => (
-            <ReservationCard
-              key={reservation.id}
-              reservation={reservation}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-            />
+        <div className="space-y-8">
+          {Array.from(
+            filteredReservations.reduce((map, r) => {
+              const key = new Date(r.date).toDateString();
+              if (!map.has(key)) map.set(key, [] as typeof filteredReservations);
+              map.get(key)!.push(r);
+              return map;
+            }, new Map<string, typeof filteredReservations>()).entries()
+          ).map(([dateKey, group]) => (
+            <div key={dateKey}>
+              <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-primary)]/60">
+                <h2 className="text-sm font-semibold text-[var(--text-secondary)] tracking-wide mb-3">
+                  {formatHeaderDate(new Date(group[0].date))}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {group.map(reservation => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    onUpdate={(id, updates) => updateReservation(id, updates)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

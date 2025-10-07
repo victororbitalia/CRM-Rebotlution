@@ -27,7 +27,7 @@ npm run build
 # 2. Docker funciona
 docker-compose up -d
 
-# 3. Accede a http://localhost:3000
+# 3. Accede a http://localhost:3001
 # Verifica que todo funcione
 ```
 

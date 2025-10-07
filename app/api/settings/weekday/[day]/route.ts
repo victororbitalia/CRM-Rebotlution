@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RestaurantSettings, DayRules } from '@/types/settings';
 import { defaultSettings } from '@/lib/defaultSettings';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
-// Simulación de base de datos
-let settings: RestaurantSettings = defaultSettings;
+const SETTINGS_ID = 'settings-singleton';
 
 // GET /api/settings/weekday/:day - Obtener configuración de un día específico
 export async function GET(
@@ -20,7 +21,10 @@ export async function GET(
       );
     }
 
-    const dayRules = settings.weekdayRules[params.day];
+    // Obtener configuración desde la base de datos
+    const existing = await prisma.restaurantSettings.findUnique({ where: { id: SETTINGS_ID } });
+    const settings = (existing?.data as any) || defaultSettings;
+    const dayRules = settings.weekdayRules?.[params.day];
 
     if (!dayRules) {
       return NextResponse.json(
@@ -57,6 +61,10 @@ export async function PUT(
       );
     }
 
+    // Obtener configuración actual desde BD
+    const existing = await prisma.restaurantSettings.findUnique({ where: { id: SETTINGS_ID } });
+    const settings = (existing?.data as any) || defaultSettings;
+
     // Validaciones
     if (body.maxReservations !== undefined && body.maxReservations < 0) {
       return NextResponse.json(
@@ -73,17 +81,28 @@ export async function PUT(
     }
 
     // Actualizar reglas del día
+    if (!settings.weekdayRules) {
+      settings.weekdayRules = {};
+    }
+    
     settings.weekdayRules[params.day] = {
       ...settings.weekdayRules[params.day],
       ...body,
       day: params.day as any,
     };
 
-    settings.updatedAt = new Date();
+    // Guardar en base de datos
+    const saved = await prisma.restaurantSettings.upsert({
+      where: { id: SETTINGS_ID },
+      create: { id: SETTINGS_ID, data: settings as unknown as Prisma.InputJsonValue },
+      update: { data: settings as unknown as Prisma.InputJsonValue },
+    });
+
+    const updatedDayRules = (saved.data as any).weekdayRules[params.day];
 
     return NextResponse.json({
       success: true,
-      data: settings.weekdayRules[params.day],
+      data: updatedDayRules,
       message: `Configuración de ${params.day} actualizada exitosamente`,
     });
   } catch (error) {

@@ -7,7 +7,22 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const reservation = await prisma.reservation.findUnique({ where: { id: params.id } });
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        date: true,
+        time: true,
+        guests: true,
+        status: true,
+        specialRequests: true,
+        createdAt: true,
+        tableId: true,
+      },
+    });
 
     if (!reservation) {
       return NextResponse.json(
@@ -71,6 +86,19 @@ export async function PUT(
         status: body.status ?? undefined,
         specialRequests: body.specialRequests ?? undefined,
       },
+      select: {
+        id: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        date: true,
+        time: true,
+        guests: true,
+        status: true,
+        specialRequests: true,
+        createdAt: true,
+        tableId: true,
+      },
     });
 
     return NextResponse.json({ success: true, data: updatedReservation, message: 'Reserva actualizada exitosamente' });
@@ -93,7 +121,22 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Reserva no encontrada' }, { status: 404 });
     }
 
-    const deletedReservation = await prisma.reservation.delete({ where: { id: params.id } });
+    const deletedReservation = await prisma.reservation.delete({
+      where: { id: params.id },
+      select: {
+        id: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        date: true,
+        time: true,
+        guests: true,
+        status: true,
+        specialRequests: true,
+        createdAt: true,
+        tableId: true,
+      },
+    });
     return NextResponse.json({ success: true, data: deletedReservation, message: 'Reserva eliminada exitosamente' });
   } catch (error) {
     return NextResponse.json(

@@ -60,12 +60,18 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
       ...reservation,
       date: reservation.date.toISOString(),
     } as any;
+    
+    console.log('Enviando reserva:', payload);
+    
     const res = await fetch('/api/reservations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+    
     const json = await res.json();
+    console.log('Respuesta del servidor:', { status: res.status, json });
+    
     if (!res.ok || !json?.success) {
       throw new Error(json?.error || 'No se pudo crear la reserva');
     }

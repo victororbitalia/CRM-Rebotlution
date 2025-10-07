@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Script de ayuda para despliegue de Cofradia CRM
+# Script de ayuda para despliegue de REBOTLUTION CRM
 # Uso: ./deploy.sh [opcion]
 
 set -e
 
-echo "🍽️  Cofradia CRM - Script de Despliegue"
+echo "🍽️  REBOTLUTION CRM - Script de Despliegue"
 echo "========================================"
 echo ""
 
@@ -20,11 +20,11 @@ build_docker() {
 run_docker() {
     echo "🚀 Ejecutando contenedor Docker..."
     docker run -d \
-        -p 3000:3000 \
+        -p 3001:3001 \
         -e NODE_ENV=production \
         --name cofradia-crm \
         cofradia-crm:latest
-    echo "✅ Contenedor ejecutándose en http://localhost:3000"
+    echo "✅ Contenedor ejecutándose en http://localhost:3001"
     echo "📋 Ver logs: docker logs -f cofradia-crm"
 }
 
@@ -32,7 +32,7 @@ run_docker() {
 compose_up() {
     echo "🐳 Iniciando con Docker Compose..."
     docker-compose up -d
-    echo "✅ Aplicación ejecutándose en http://localhost:3000"
+    echo "✅ Aplicación ejecutándose en http://localhost:3001"
     echo "📋 Ver logs: docker-compose logs -f"
 }
 

@@ -4,7 +4,7 @@ REM Uso: deploy.bat [opcion]
 
 echo.
 echo ============================================
-echo   Cofradia CRM - Script de Despliegue
+echo   REBOTLUTION CRM - Script de Despliegue
 echo ============================================
 echo.
 
@@ -61,7 +61,7 @@ echo Iniciando con Docker Compose...
 docker-compose up -d
 if %errorlevel% equ 0 (
     echo.
-    echo [OK] Aplicacion ejecutandose en http://localhost:3000
+    echo [OK] Aplicacion ejecutandose en http://localhost:3001
     echo Ver logs: docker-compose logs -f
 ) else (
     echo.

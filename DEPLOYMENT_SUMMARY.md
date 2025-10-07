@@ -133,7 +133,7 @@ docker-compose up -d
 
 # Opción 2: Docker manual
 docker build -t cofradia-crm .
-docker run -p 3000:3000 cofradia-crm
+docker run -p 3001:3001 cofradia-crm
 
 # Opción 3: Desarrollo
 npm run dev
@@ -169,7 +169,7 @@ npm run build
 
 # 2. Docker funciona (opcional)
 docker-compose up -d
-# ✅ Accede a http://localhost:3000
+# ✅ Accede a http://localhost:3001
 
 # 3. Archivos necesarios
 ls Dockerfile .dockerignore docker-compose.yml

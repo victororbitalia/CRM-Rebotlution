@@ -1,8 +1,8 @@
-# 📚 Documentación de la API - Cofradia Restaurant CRM
+# 📚 Documentación de la API - REBOTLUTION Restaurant CRM
 
 ## 🌐 URL Base
 ```
-http://localhost:3000/api
+http://localhost:3001/api
 ```
 
 En producción, reemplaza `localhost:3001` con tu dominio.
@@ -32,6 +32,9 @@ Obtiene una lista de todas las reservas con filtros opcionales.
 | `date` | string | Filtrar por fecha (YYYY-MM-DD) | `2024-10-04` |
 | `status` | string | Filtrar por estado | `pending`, `confirmed`, `seated`, `completed`, `cancelled` |
 | `tableId` | string | Filtrar por mesa asignada | `table-1` |
+| `name` | string | Buscar por nombre del cliente (contiene, case-insensitive) | `ana` |
+| `phone` | string | Buscar por teléfono del cliente (contiene) | `+34 600` |
+| `time` | string | Filtrar por hora exacta (HH:MM) | `20:00` |
 
 **Respuesta exitosa (200):**
 ```json
@@ -59,10 +62,10 @@ Obtiene una lista de todas las reservas con filtros opcionales.
 **Ejemplo de uso:**
 ```bash
 # Todas las reservas
-curl http://localhost:3000/api/reservations
+curl http://localhost:3001/api/reservations
 
 # Reservas de hoy con estado confirmado
-curl "http://localhost:3000/api/reservations?date=2024-10-04&status=confirmed"
+curl "http://localhost:3001/api/reservations?date=2024-10-04&status=confirmed"
 ```
 
 ---
@@ -107,13 +110,13 @@ Obtiene los detalles de una reserva por su ID.
 
 **Ejemplo de uso:**
 ```bash
-curl http://localhost:3000/api/reservations/res-1
+curl http://localhost:3001/api/reservations/res-1
 ```
 
 ---
 
 ### 3. Crear nueva reserva
-Crea una nueva reserva en el sistema.
+Crea una nueva reserva en el sistema con validación de capacidad.
 
 **Endpoint:** `POST /api/reservations`
 
@@ -126,6 +129,7 @@ Crea una nueva reserva en el sistema.
   "date": "2024-10-05",
   "time": "20:00",
   "guests": 4,
+  "preferredLocation": "interior",
   "tableId": "table-3",
   "specialRequests": "Cumpleaños"
 }
@@ -145,8 +149,16 @@ Crea una nueva reserva en el sistema.
 | Campo | Tipo | Descripción | Default |
 |-------|------|-------------|---------|
 | `tableId` | string | ID de la mesa asignada | `undefined` |
+| `preferredLocation` | string | Preferencia de ubicación para asignación automática (`interior`, `exterior`, `terraza`, `privado`, `any`) | `any` o `defaultPreferredLocation` |
 | `status` | string | Estado inicial | `pending` |
 | `specialRequests` | string | Peticiones especiales | `undefined` |
+
+**Validaciones de Capacidad:**
+- ✅ Verifica que el restaurante esté abierto el día solicitado
+- ✅ Valida límite de reservas por día (`maxReservations`)
+- ✅ Valida límite de comensales totales por día (`maxGuestsTotal`)
+- ✅ Verifica disponibilidad de mesa específica (si se proporciona)
+- ✅ Valida que la mesa no esté ya reservada en la misma fecha y hora
 
 **Respuesta exitosa (201):**
 ```json
@@ -169,6 +181,56 @@ Crea una nueva reserva en el sistema.
 }
 ```
 
+**Respuestas de Error de Capacidad (409):**
+
+**Restaurante cerrado:**
+```json
+{
+  "success": false,
+  "error": "El restaurante no está abierto este día"
+}
+```
+
+**Límite de reservas alcanzado:**
+```json
+{
+  "success": false,
+  "error": "No hay disponibilidad para este día. Límite de reservas alcanzado.",
+  "details": {
+    "maxReservations": 50,
+    "currentReservations": 50,
+    "availableSlots": 0
+  }
+}
+```
+
+**Límite de comensales alcanzado:**
+```json
+{
+  "success": false,
+  "error": "No hay disponibilidad para este día. Límite de comensales alcanzado.",
+  "details": {
+    "maxGuestsTotal": 100,
+    "currentGuests": 95,
+    "requestedGuests": 8,
+    "availableGuests": 5
+  }
+}
+```
+
+**Mesa ya reservada:**
+```json
+{
+  "success": false,
+  "error": "La mesa ya está reservada para esta fecha y hora",
+  "details": {
+    "tableId": "table-1",
+    "conflictingTime": "20:00",
+    "conflictingReservationId": "reservation-2"
+  }
+}
+```
+
 **Respuesta de error (400):**
 ```json
 {
@@ -179,7 +241,7 @@ Crea una nueva reserva en el sistema.
 
 **Ejemplo de uso:**
 ```bash
-curl -X POST http://localhost:3000/api/reservations \
+curl -X POST http://localhost:3001/api/reservations \
   -H "Content-Type: application/json" \
   -d '{
     "customerName": "Juan Pérez",
@@ -187,14 +249,15 @@ curl -X POST http://localhost:3000/api/reservations \
     "customerPhone": "+34 600 123 456",
     "date": "2024-10-05",
     "time": "20:00",
-    "guests": 4
+    "guests": 4,
+    "preferredLocation": "interior"
   }'
 ```
 
 ---
 
-### 4. Actualizar reserva completa
-Actualiza todos los datos de una reserva existente.
+### 4. Actualizar reserva (parcial)
+Actualiza los datos de una reserva existente. Solo se actualizan los campos enviados; los campos omitidos permanecen sin cambios. Los campos opcionales enviados como `null` se limpian.
 
 **Endpoint:** `PUT /api/reservations/:id`
 
@@ -239,9 +302,35 @@ Actualiza todos los datos de una reserva existente.
 }
 ```
 
+Notas importantes:
+- Los campos no incluidos en el body no se modifican.
+- Para limpiar un campo opcional como `specialRequests`, envía el valor `null`.
+- Si solo vas a cambiar el estado, también puedes usar el endpoint específico `PATCH /api/reservations/:id/status`.
+
+Ejemplos adicionales:
+
+1) Actualizar solo teléfono y hora
+```bash
+curl -X PUT http://localhost:3001/api/reservations/res-1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerPhone": "+34 600 222 111",
+    "time": "22:00"
+  }'
+```
+
+2) Borrar notas (`specialRequests`)
+```bash
+curl -X PUT http://localhost:3001/api/reservations/res-1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "specialRequests": null
+  }'
+```
+
 **Ejemplo de uso:**
 ```bash
-curl -X PUT http://localhost:3000/api/reservations/res-1 \
+curl -X PUT http://localhost:3001/api/reservations/res-1 \
   -H "Content-Type: application/json" \
   -d '{
     "guests": 6,
@@ -298,7 +387,7 @@ Actualiza únicamente el estado de una reserva (endpoint optimizado).
 
 **Ejemplo de uso:**
 ```bash
-curl -X PATCH http://localhost:3000/api/reservations/res-1/status \
+curl -X PATCH http://localhost:3001/api/reservations/res-1/status \
   -H "Content-Type: application/json" \
   -d '{"status": "confirmed"}'
 ```
@@ -337,7 +426,7 @@ Elimina una reserva del sistema.
 
 **Ejemplo de uso:**
 ```bash
-curl -X DELETE http://localhost:3000/api/reservations/res-1
+curl -X DELETE http://localhost:3001/api/reservations/res-1
 ```
 
 ---
@@ -383,10 +472,10 @@ Obtiene una lista de todas las mesas con filtros opcionales.
 **Ejemplo de uso:**
 ```bash
 # Todas las mesas
-curl http://localhost:3000/api/tables
+curl http://localhost:3001/api/tables
 
 # Mesas disponibles en el interior con capacidad mínima de 4
-curl "http://localhost:3000/api/tables?location=interior&available=true&minCapacity=4"
+curl "http://localhost:3001/api/tables?location=interior&available=true&minCapacity=4"
 ```
 
 ---
@@ -417,7 +506,7 @@ Obtiene los detalles de una mesa por su ID.
 
 **Ejemplo de uso:**
 ```bash
-curl http://localhost:3000/api/tables/table-1
+curl http://localhost:3001/api/tables/table-1
 ```
 
 ---
@@ -456,7 +545,7 @@ Actualiza la disponibilidad de una mesa.
 
 **Ejemplo de uso:**
 ```bash
-curl -X PUT http://localhost:3000/api/tables/table-1 \
+curl -X PUT http://localhost:3001/api/tables/table-1 \
   -H "Content-Type: application/json" \
   -d '{"isAvailable": false}'
 ```
@@ -515,10 +604,10 @@ Verifica qué mesas están disponibles para una fecha, hora y número de comensa
 
 **Ejemplo de uso:**
 ```bash
-curl "http://localhost:3000/api/tables/availability?date=2024-10-05&time=20:00&guests=4"
+curl "http://localhost:3001/api/tables/availability?date=2024-10-05&time=20:00&guests=4"
 
 # Con ubicación específica
-curl "http://localhost:3000/api/tables/availability?date=2024-10-05&time=20:00&guests=4&location=terraza"
+curl "http://localhost:3001/api/tables/availability?date=2024-10-05&time=20:00&guests=4&location=terraza"
 ```
 
 ---
@@ -536,7 +625,7 @@ Obtiene toda la configuración del restaurante.
   "success": true,
   "data": {
     "id": "settings-1",
-    "restaurantName": "Cofradia Restaurant",
+    "restaurantName": "REBOTLUTION Restaurant",
     "email": "info@cofradia.com",
     "phone": "+34 900 123 456",
     "address": "Calle Principal, 123, Madrid",
@@ -561,7 +650,8 @@ Obtiene toda la configuración del restaurante.
       "minGuestsPerReservation": 1,
       "allowWaitlist": true,
       "requireConfirmation": false,
-      "autoConfirmAfterMinutes": 30
+      "autoConfirmAfterMinutes": 30,
+      "defaultPreferredLocation": "any"
     },
     "tables": {
       "totalTables": 10,
@@ -609,7 +699,7 @@ Obtiene toda la configuración del restaurante.
 
 **Ejemplo de uso:**
 ```bash
-curl http://localhost:3000/api/settings
+curl http://localhost:3001/api/settings
 ```
 
 ---
@@ -675,7 +765,7 @@ Actualiza toda la configuración del restaurante.
 
 **Ejemplo de uso:**
 ```bash
-curl -X PUT http://localhost:3000/api/settings \
+curl -X PUT http://localhost:3001/api/settings \
   -H "Content-Type: application/json" \
   -d '{
     "tables": {
@@ -695,7 +785,7 @@ Actualiza solo algunos campos de la configuración.
 **Body (JSON):**
 ```json
 {
-  "restaurantName": "Cofradia Actualizado",
+  "restaurantName": "REBOTLUTION Actualizado",
   "notifications": {
     "emailEnabled": true,
     "reminderHoursBefore": 48
@@ -716,7 +806,7 @@ Actualiza solo algunos campos de la configuración.
 
 **Ejemplo de uso:**
 ```bash
-curl -X PATCH http://localhost:3000/api/settings \
+curl -X PATCH http://localhost:3001/api/settings \
   -H "Content-Type: application/json" \
   -d '{"restaurantName": "Nuevo Nombre"}'
 ```
@@ -750,7 +840,7 @@ Obtiene la configuración de capacidad y límites para un día de la semana.
 **Ejemplo de uso:**
 ```bash
 # Obtener configuración del viernes
-curl http://localhost:3000/api/settings/weekday/friday
+curl http://localhost:3001/api/settings/weekday/friday
 ```
 
 ---
@@ -797,7 +887,7 @@ Actualiza la configuración de capacidad para un día de la semana.
 **Ejemplo de uso:**
 ```bash
 # Aumentar capacidad del sábado
-curl -X PUT http://localhost:3000/api/settings/weekday/saturday \
+curl -X PUT http://localhost:3001/api/settings/weekday/saturday \
   -H "Content-Type: application/json" \
   -d '{
     "maxReservations": 40,
@@ -806,7 +896,7 @@ curl -X PUT http://localhost:3000/api/settings/weekday/saturday \
   }'
 
 # Reducir capacidad del lunes
-curl -X PUT http://localhost:3000/api/settings/weekday/monday \
+curl -X PUT http://localhost:3001/api/settings/weekday/monday \
   -H "Content-Type: application/json" \
   -d '{
     "maxReservations": 15,
@@ -868,10 +958,10 @@ Obtiene métricas y estadísticas generales del restaurante.
 **Ejemplo de uso:**
 ```bash
 # Estadísticas de hoy
-curl http://localhost:3000/api/stats
+curl http://localhost:3001/api/stats
 
 # Estadísticas de una fecha específica
-curl "http://localhost:3000/api/stats?date=2024-10-05"
+curl "http://localhost:3001/api/stats?date=2024-10-05"
 ```
 
 ---
@@ -894,10 +984,10 @@ curl "http://localhost:3000/api/stats?date=2024-10-05"
 
 ```bash
 # 1. Verificar disponibilidad
-curl "http://localhost:3000/api/tables/availability?date=2024-10-05&time=20:00&guests=4"
+curl "http://localhost:3001/api/tables/availability?date=2024-10-05&time=20:00&guests=4"
 
 # 2. Crear reserva con mesa asignada
-curl -X POST http://localhost:3000/api/reservations \
+curl -X POST http://localhost:3001/api/reservations \
   -H "Content-Type: application/json" \
   -d '{
     "customerName": "Ana López",
@@ -910,27 +1000,27 @@ curl -X POST http://localhost:3000/api/reservations \
   }'
 
 # 3. Confirmar la reserva
-curl -X PATCH http://localhost:3000/api/reservations/res-123/status \
+curl -X PATCH http://localhost:3001/api/reservations/res-123/status \
   -H "Content-Type: application/json" \
   -d '{"status": "confirmed"}'
 
 # 4. Marcar mesa como ocupada
-curl -X PUT http://localhost:3000/api/tables/table-3 \
+curl -X PUT http://localhost:3001/api/tables/table-3 \
   -H "Content-Type: application/json" \
   -d '{"isAvailable": false}'
 
 # 5. Cliente llega - cambiar estado a "seated"
-curl -X PATCH http://localhost:3000/api/reservations/res-123/status \
+curl -X PATCH http://localhost:3001/api/reservations/res-123/status \
   -H "Content-Type: application/json" \
   -d '{"status": "seated"}'
 
 # 6. Servicio completado
-curl -X PATCH http://localhost:3000/api/reservations/res-123/status \
+curl -X PATCH http://localhost:3001/api/reservations/res-123/status \
   -H "Content-Type: application/json" \
   -d '{"status": "completed"}'
 
 # 7. Liberar mesa
-curl -X PUT http://localhost:3000/api/tables/table-3 \
+curl -X PUT http://localhost:3001/api/tables/table-3 \
   -H "Content-Type: application/json" \
   -d '{"isAvailable": true}'
 ```
@@ -939,16 +1029,16 @@ curl -X PUT http://localhost:3000/api/tables/table-3 \
 
 ```bash
 # Ver todas las reservas de hoy
-curl "http://localhost:3000/api/reservations?date=$(date +%Y-%m-%d)"
+curl "http://localhost:3001/api/reservations?date=$(date +%Y-%m-%d)"
 
 # Ver reservas pendientes
-curl "http://localhost:3000/api/reservations?status=pending"
+curl "http://localhost:3001/api/reservations?status=pending"
 
 # Ver mesas disponibles
-curl "http://localhost:3000/api/tables?available=true"
+curl "http://localhost:3001/api/tables?available=true"
 
 # Ver estadísticas del día
-curl http://localhost:3000/api/stats
+curl http://localhost:3001/api/stats
 ```
 
 ---
@@ -967,12 +1057,41 @@ curl http://localhost:3000/api/stats
 
 ## 🗃️ Base de Datos
 
-⚠️ **NOTA**: Actualmente la API usa datos en memoria (mock data). En producción debes:
+✅ **ESTADO ACTUAL**: La API usa PostgreSQL con Prisma ORM para persistencia de datos.
 
-1. Conectar a una base de datos real (PostgreSQL, MongoDB, etc.)
-2. Implementar persistencia de datos
-3. Agregar transacciones para operaciones críticas
-4. Implementar backups automáticos
+### Configuración Requerida
+
+**Variables de entorno necesarias:**
+```bash
+DATABASE_URL=postgresql://usuario:password@localhost:5432/cofradia_db
+```
+
+**Modelos principales:**
+- `Reservation` - Reservas del restaurante
+- `Table` - Mesas disponibles
+- `RestaurantSettings` - Configuración general (almacenada como JSON)
+
+### Migraciones
+
+Antes de usar la API, ejecuta las migraciones:
+```bash
+# Generar cliente Prisma
+npx prisma generate
+
+# Aplicar migraciones
+npx prisma migrate deploy
+
+# (Opcional) Crear datos de prueba
+npx prisma db seed
+```
+
+### Para Producción
+
+1. ✅ **PostgreSQL configurado** (versión 12 o superior)
+2. ✅ **DATABASE_URL** configurada en variables de entorno
+3. ✅ **Migraciones aplicadas** con `prisma migrate deploy`
+4. ✅ **Backups automáticos** configurados en tu servidor
+5. ✅ **Connection pooling** para mejor rendimiento
 
 ---
 

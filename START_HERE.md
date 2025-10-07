@@ -2,7 +2,11 @@
 
 ## ✅ Tu Proyecto Está 100% Listo
 
-Todos los archivos necesarios han sido creados. Ahora solo tienes que elegir cómo desplegar.
+Todos los archivos necesarios han sido creados. 
+
+⚠️ **IMPORTANTE**: Esta aplicación **requiere PostgreSQL**. Asegúrate de configurar la base de datos antes de desplegar.
+
+📖 **Guía de Base de Datos:** [DATABASE_SETUP.md](./DATABASE_SETUP.md)
 
 ---
 
@@ -65,7 +69,7 @@ deploy.bat up
 docker-compose up -d
 ```
 
-Accede a: `http://localhost:3000`
+Accede a: `http://localhost:3001`
 
 ---
 
@@ -117,15 +121,20 @@ npm run build
 
 ---
 
-## ⚙️ Variables de Entorno (Opcional)
+## ⚙️ Variables de Entorno (OBLIGATORIO)
 
-Si necesitas configurar variables en Easypanel:
+En Easypanel, configura estas variables:
 
 ```
 NODE_ENV=production
-PORT=3000
+PORT=3001
 NEXT_PUBLIC_APP_URL=https://tu-dominio.com
+DATABASE_URL=postgresql://cofradia:password@postgres:5432/cofradia_db
 ```
+
+⚠️ **IMPORTANTE**: `DATABASE_URL` es **OBLIGATORIO**. La app no funcionará sin PostgreSQL.
+
+Ver guía completa: [DATABASE_SETUP.md](./DATABASE_SETUP.md)
 
 ---
 

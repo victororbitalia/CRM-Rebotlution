@@ -1,4 +1,4 @@
-# 🍽️ Cofradia - Sistema de Gestión de Reservas para Restaurantes
+# 🍽️ REBOTLUTION - Sistema de Gestión de Reservas para Restaurantes
 
 Un sistema profesional y completo para la gestión de reservas de restaurantes, construido con Next.js 14, React, TypeScript y Tailwind CSS. Incluye API REST completa para integraciones.
 
@@ -90,20 +90,43 @@ Todos los ajustes y operaciones disponibles vía API para integraciones:
 ### Requisitos Previos
 - Node.js 18 o superior
 - npm o yarn
+- **PostgreSQL 12 o superior** (OBLIGATORIO)
 
 ### Desarrollo Local
 
-1. Instala las dependencias:
-```bash
-npm install
-```
+1. **Configura PostgreSQL:**
+   
+   Consulta la guía completa: [DATABASE_SETUP.md](./DATABASE_SETUP.md)
+   
+   ```bash
+   # Opción rápida con Docker:
+   docker-compose up -d postgres
+   ```
 
-2. Inicia el servidor de desarrollo:
-```bash
-npm run dev
-```
+2. **Configura variables de entorno:**
+   
+   Crea un archivo `.env` en la raíz:
+   ```env
+   DATABASE_URL="postgresql://cofradia:password@localhost:5432/cofradia_db"
+   ```
 
-3. Abre tu navegador en [http://localhost:3000](http://localhost:3000)
+3. **Instala las dependencias:**
+   ```bash
+   npm install
+   ```
+
+4. **Ejecuta las migraciones de Prisma:**
+   ```bash
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+5. **Inicia el servidor de desarrollo:**
+   ```bash
+   npm run dev
+   ```
+
+6. **Abre tu navegador en [http://localhost:3001](http://localhost:3001)**
 
 ### 🌐 Despliegue en Producción
 
@@ -130,7 +153,7 @@ git push
 # Construir y ejecutar
 docker-compose up -d
 
-# Ver en: http://localhost:3000
+# Ver en: http://localhost:3001
 ```
 
 #### Opción 3: Vercel / Railway / Render
@@ -188,11 +211,14 @@ cofradia/
 - **Context API** - Gestión de estado global
 - **API Routes** - Backend integrado
 
-## 📚 Documentación de la API
+## 📚 Documentación
 
-El proyecto incluye una API REST completa. Consulta la documentación detallada en:
+El proyecto incluye documentación completa:
 
-📖 **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)**
+- 📖 **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** - Documentación de la API REST
+- 💾 **[DATABASE_SETUP.md](./DATABASE_SETUP.md)** - Configuración de PostgreSQL
+- 🚀 **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Guía de despliegue completa
+- ⚡ **[QUICK_START.md](./QUICK_START.md)** - Inicio rápido
 
 ### Endpoints Principales:
 

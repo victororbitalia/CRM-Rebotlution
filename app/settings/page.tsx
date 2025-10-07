@@ -246,6 +246,29 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                  Ubicación por defecto de reservas
+                </label>
+                <select
+                  value={settings.reservations.defaultPreferredLocation || 'any'}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    reservations: { ...settings.reservations, defaultPreferredLocation: e.target.value as any }
+                  })}
+                  className="input-field"
+                >
+                  <option value="any">Cualquiera</option>
+                  <option value="interior">Interior</option>
+                  <option value="exterior">Exterior</option>
+                  <option value="terraza">Terraza</option>
+                  <option value="privado">Privado</option>
+                </select>
+                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                  Se usará al asignar mesa automáticamente si no se especifica una preferencia.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                   Máximo de comensales por reserva
                 </label>
                 <input

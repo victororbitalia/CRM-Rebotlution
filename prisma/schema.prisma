@@ -30,6 +30,7 @@ model Reservation {
   guests          Int
   status          ReservationStatus @default(pending)
   specialRequests String?
+  preferredLocation String? // 'interior' | 'exterior' | 'terraza' | 'privado' | 'any'
   createdAt       DateTime @default(now())
 
   // Relation to Table
