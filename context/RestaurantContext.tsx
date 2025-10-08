@@ -66,9 +66,13 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
 
   const addReservation = async (reservation: Omit<Reservation, 'id' | 'createdAt'>) => {
     // Persistir en backend
+    const normalizedDate = reservation.date instanceof Date
+      ? reservation.date.toISOString().split('T')[0]
+      : reservation.date;
+
     const payload = {
       ...reservation,
-      date: reservation.date.toISOString(),
+      date: normalizedDate,
     } as any;
     
     console.log('Enviando reserva:', payload);

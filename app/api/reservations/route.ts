@@ -104,8 +104,43 @@ export async function POST(request: NextRequest) {
     const settings = (settingsRecord?.data as any) || (defaultSettings as any);
     const timezone = settings.reservations?.timezone || 'Europe/Madrid';
 
-    // Construir la fecha y hora de la reserva en la zona horaria correcta
-    const reservationDateTime = DateTime.fromISO(`${body.date}T${body.time}`, { zone: timezone });
+    // Normalizar fecha (aceptar ISO completo o solo YYYY-MM-DD)
+    const rawDateInput = body.date;
+    let isoDate: string | null = null;
+
+    if (typeof rawDateInput === 'string') {
+      isoDate = rawDateInput.includes('T') ? rawDateInput.split('T')[0] : rawDateInput;
+    } else if (rawDateInput instanceof Date) {
+      isoDate = DateTime.fromJSDate(rawDateInput).toISODate();
+    } else if (rawDateInput) {
+      const parsed = DateTime.fromJSDate(new Date(rawDateInput));
+      if (parsed.isValid) {
+        isoDate = parsed.toISODate();
+      }
+    }
+
+    if (!isoDate) {
+      return NextResponse.json({ success: false, error: 'La fecha proporcionada no es válida' }, { status: 400 });
+    }
+
+    const dayDate = DateTime.fromISO(isoDate, { zone: timezone });
+    if (!dayDate.isValid) {
+      return NextResponse.json({ success: false, error: 'La fecha proporcionada no es válida' }, { status: 400 });
+    }
+
+    const timeString = typeof body.time === 'string' ? body.time.trim() : '';
+    const [hourStr, minuteStr] = timeString.split(':');
+    const hour = parseInt(hourStr || '', 10);
+    const minute = parseInt(minuteStr || '', 10);
+
+    if (Number.isNaN(hour) || Number.isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return NextResponse.json({ success: false, error: 'La hora proporcionada no es válida (formato HH:MM)' }, { status: 400 });
+    }
+
+    const normalizedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    body.time = normalizedTime;
+
+    const reservationDateTime = dayDate.set({ hour, minute, second: 0, millisecond: 0 });
     const nowInTimezone = DateTime.now().setZone(timezone);
 
     if (!reservationDateTime.isValid) {
@@ -118,6 +153,20 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'No se pueden crear reservas en fechas pasadas' },
         { status: 409 }
       );
+    }
+
+    const minAdvanceHours = Number(settings.reservations?.minAdvanceHours || 0);
+    if (minAdvanceHours > 0) {
+      const diffInMinutes = reservationDateTime.diff(nowInTimezone, 'minutes').minutes;
+      if (diffInMinutes < minAdvanceHours * 60) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Las reservas requieren al menos ${minAdvanceHours} ${minAdvanceHours === 1 ? 'hora' : 'horas'} de anticipación`,
+          },
+          { status: 409 }
+        );
+      }
     }
     
     const dayOfWeek = reservationDateTime.weekday % 7; // Luxon: 1-7 (Mon-Sun), JS: 0-6 (Sun-Sat)
