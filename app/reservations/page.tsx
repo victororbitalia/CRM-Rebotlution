@@ -6,9 +6,10 @@ import { PlusIcon, XIcon, FilterIcon, SearchIcon } from '@/components/Icons';
 import { useState, useMemo, useEffect } from 'react';
 import { Reservation } from '@/types';
 import { classifyAndGroupReservations } from '@/lib/reservationUtils';
+import { DateTime } from 'luxon';
 
 export default function ReservationsPage() {
-  const { reservations, addReservation, updateReservation, deleteReservation } = useRestaurant();
+  const { reservations, addReservation, updateReservation, deleteReservation, tables, settings } = useRestaurant();
   const [showForm, setShowForm] = useState(false);
   const [filterDate, setFilterDate] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -38,6 +39,108 @@ export default function ReservationsPage() {
     setFormError(null); // Limpiar error anterior
 
     try {
+      // Validaciones en UI basadas en configuración y datos locales
+      const tz = settings?.reservations?.timezone || settings?.timezone || 'Europe/Madrid';
+      const durationMinutes = Number(settings?.reservations?.defaultDuration || 120);
+      const minAdvanceHours = Number(settings?.reservations?.minAdvanceHours || 0);
+
+      if (!formData.date || !formData.time) {
+        setFormError('Debes indicar fecha y hora');
+        return;
+      }
+
+      // Construir DateTime de reserva con zona horaria
+      const dateISO = formData.date.includes('T') ? formData.date.split('T')[0] : formData.date;
+      const dayDate = DateTime.fromISO(dateISO, { zone: tz });
+      const [hStr, mStr] = (formData.time || '').split(':');
+      const hour = parseInt(hStr || '', 10);
+      const minute = parseInt(mStr || '', 10);
+      if (Number.isNaN(hour) || Number.isNaN(minute)) {
+        setFormError('Hora inválida (usa formato HH:MM)');
+        return;
+      }
+      const reservationDT = dayDate.set({ hour, minute, second: 0, millisecond: 0 });
+      if (!reservationDT.isValid) {
+        setFormError('Fecha u hora inválidas');
+        return;
+      }
+
+      // Anticipación mínima (minAdvanceHours)
+      if (minAdvanceHours > 0) {
+        const nowTz = DateTime.now().setZone(tz);
+        const diffMinutes = reservationDT.diff(nowTz, 'minutes').minutes;
+        if (diffMinutes < minAdvanceHours * 60) {
+          setFormError(`Las reservas requieren al menos ${minAdvanceHours} ${minAdvanceHours === 1 ? 'hora' : 'horas'} de anticipación`);
+          return;
+        }
+      }
+
+      // Dentro del horario de apertura/cierre y duración
+      const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const dayKey = dayNames[(reservationDT.weekday) % 7];
+      const sched = settings?.schedule?.[dayKey];
+      if (!sched || sched.isOpen === false) {
+        setFormError('El restaurante no está abierto este día');
+        return;
+      }
+      const [openH, openM] = (sched.openTime || '00:00').split(':').map((v: string) => parseInt(v, 10) || 0);
+      const [closeHRaw, closeM] = (sched.closeTime || '23:59').split(':').map((v: string) => parseInt(v, 10) || 0);
+      const closingIsMidnight = closeHRaw === 0 && closeM === 0; // interpretar 00:00 como fin de día
+      const closeH = closingIsMidnight ? 24 : closeHRaw;
+      const openDT = dayDate.set({ hour: openH, minute: openM, second: 0, millisecond: 0 });
+      const closeDT = dayDate.plus({ days: closeH === 24 ? 1 : 0 }).set({ hour: closeH % 24, minute: closeM, second: 0, millisecond: 0 });
+      if (reservationDT < openDT) {
+        setFormError(`La hora seleccionada está antes de la apertura (${sched.openTime})`);
+        return;
+      }
+      const reservationEnd = reservationDT.plus({ minutes: durationMinutes });
+      if (reservationEnd > closeDT) {
+        setFormError(`La reserva excede el horario de cierre (${sched.closeTime}) considerando la duración (${durationMinutes} min)`);
+        return;
+      }
+
+      // Límites diarios: maxReservations y maxGuestsTotal
+      const weekdayRules = settings?.weekdayRules || {};
+      const dayRule = weekdayRules?.[dayKey];
+      if (!dayRule) {
+        setFormError('No hay reglas de capacidad definidas para este día');
+        return;
+      }
+      const dayStart = reservationDT.startOf('day').toJSDate().getTime();
+      const dayEnd = reservationDT.endOf('day').toJSDate().getTime();
+      const consideredStatuses: Reservation['status'][] = ['pending','confirmed'];
+      const existingSameDay = reservations.filter(r => {
+        const t = new Date(r.date).getTime();
+        return t >= dayStart && t <= dayEnd && consideredStatuses.includes(r.status);
+      });
+      if (existingSameDay.length >= (dayRule.maxReservations || 50)) {
+        setFormError('No hay disponibilidad para este día. Límite de reservas alcanzado.');
+        return;
+      }
+      const totalGuestsDay = existingSameDay.reduce((acc, r) => acc + r.guests, 0);
+      if (totalGuestsDay + formData.guests > (dayRule.maxGuestsTotal || 100)) {
+        const remaining = Math.max(0, (dayRule.maxGuestsTotal || 100) - totalGuestsDay);
+        setFormError(`No hay disponibilidad: límite de comensales alcanzado. Quedan ${remaining} plazas.`);
+        return;
+      }
+
+      // Capacidad y disponibilidad de mesas para la hora seleccionada
+      const preferredLocation = (formData.preferredLocation || settings?.reservations?.defaultPreferredLocation || 'any') as string;
+      const candidateTables = tables.filter(t => t.isAvailable && t.capacity >= formData.guests && (preferredLocation === 'any' || t.location === preferredLocation));
+      if (candidateTables.length === 0) {
+        setFormError('No hay mesas con capacidad suficiente para esta preferencia.');
+        return;
+      }
+      // Contar mesas ya ocupadas a esa hora entre las candidatas
+      const candidateIds = new Set(candidateTables.map(t => t.id));
+      const reservedAtSlot = existingSameDay.filter(r => r.time === formData.time && r.tableId && candidateIds.has(r.tableId)).length;
+      const reservedTablesAlways = Number(settings?.tables?.reservedTablesAlways || 0);
+      const availableCount = candidateTables.length - reservedAtSlot - reservedTablesAlways;
+      if (availableCount <= 0) {
+        setFormError('No hay mesas disponibles para esa hora considerando capacidad y mesas reservadas para walk-ins.');
+        return;
+      }
+
       await addReservation({
         customerName: formData.customerName,
         customerEmail: formData.customerEmail,
