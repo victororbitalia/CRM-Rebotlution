@@ -38,9 +38,9 @@ CHANGELOG.md
 LICENSE
 
 # Docker
-Dockerfile
 docker-compose.yml
 .dockerignore
 
-
+# NOTA: El Dockerfile debe estar incluido en el despliegue
+# para que EasyPanel pueda construir la imagen Docker
 
