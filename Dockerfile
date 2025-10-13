@@ -51,6 +51,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pg ./node_modules/pg
 
 USER nextjs
 
@@ -59,6 +60,6 @@ EXPOSE 3001
 ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
 
-# Ejecutar migraciones si existen; si no, sincronizar el esquema con db push
-CMD ["sh", "-c", "if [ -d prisma/migrations ] && [ \"$(ls -A prisma/migrations 2>/dev/null)\" ]; then ./node_modules/.bin/prisma migrate deploy; else ./node_modules/.bin/prisma db push; fi; node server.js"]
+# Ejecutar el script de migración personalizado y luego iniciar la aplicación
+CMD ["sh", "-c", "node prisma/migrations.js && node server.js"]
 
