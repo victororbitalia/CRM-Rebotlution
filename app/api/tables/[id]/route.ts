@@ -7,7 +7,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const table = await prisma.table.findUnique({ where: { id: params.id } });
+    const table = await prisma.table.findUnique({
+      where: { id: params.id },
+      include: {
+        zone: true,
+      },
+    });
 
     if (!table) {
       return NextResponse.json(
@@ -48,10 +53,17 @@ export async function PUT(
       );
     }
 
+    const updateData: any = {};
+    if (body.isAvailable !== undefined) updateData.isAvailable = body.isAvailable;
+    if (body.positionX !== undefined) updateData.positionX = body.positionX;
+    if (body.positionY !== undefined) updateData.positionY = body.positionY;
+    if (body.zoneId !== undefined) updateData.zoneId = body.zoneId;
+
     const updated = await prisma.table.update({
       where: { id: params.id },
-      data: {
-        isAvailable: body.isAvailable !== undefined ? body.isAvailable : undefined,
+      data: updateData,
+      include: {
+        zone: true,
       },
     });
     return NextResponse.json({ success: true, data: updated, message: 'Mesa actualizada exitosamente' });

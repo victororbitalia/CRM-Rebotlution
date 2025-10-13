@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "7a6b0a7d5a80125e",
+        "id": "2759ac55954f3788",
         "type": "tabs",
         "children": [
           {
-            "id": "ec8b2f7574165d01",
+            "id": "387928be30cdbb4b",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "docs/Guia_Proyecto_CRM_Rebotlution.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Guia_Proyecto_CRM_Rebotlution"
+              "title": "Nueva pestaña"
             }
           }
         ]
@@ -169,8 +165,9 @@
       "bases:Crear nueva base": false
     }
   },
-  "active": "ec8b2f7574165d01",
+  "active": "387928be30cdbb4b",
   "lastOpenFiles": [
+    "docs/Guia_Proyecto_CRM_Rebotlution.md",
     "DEPLOYMENT.md",
     "CONFIGURACION_PUERTO_EASYPANEL.md",
     "API_DOCUMENTATION.md"

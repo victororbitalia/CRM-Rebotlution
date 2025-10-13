@@ -14,7 +14,13 @@ export async function GET(request: NextRequest) {
     if (available !== null) where.isAvailable = available === 'true';
     if (minCapacity) where.capacity = { gte: parseInt(minCapacity) };
 
-    const data = await prisma.table.findMany({ where, orderBy: { number: 'asc' } });
+    const data = await prisma.table.findMany({
+      where,
+      include: {
+        zone: true,
+      },
+      orderBy: { number: 'asc' }
+    });
     return NextResponse.json({ success: true, data, count: data.length });
   } catch (error) {
     return NextResponse.json(
@@ -40,6 +46,12 @@ export async function POST(request: NextRequest) {
         capacity: body.capacity,
         location: body.location,
         isAvailable: body.isAvailable ?? true,
+        positionX: body.positionX,
+        positionY: body.positionY,
+        zoneId: body.zoneId,
+      },
+      include: {
+        zone: true,
       },
     });
     return NextResponse.json({ success: true, data: created }, { status: 201 });

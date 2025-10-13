@@ -15,6 +15,10 @@ model Table {
   capacity   Int
   location   String   // 'interior' | 'exterior' | 'terraza' | 'privado'
   isAvailable Boolean  @default(true)
+  positionX  Float?   // Relative X position (0-100)
+  positionY  Float?   // Relative Y position (0-100)
+  zoneId     String?  // Reference to zone for better organization
+  zone       Zone?    @relation(fields: [zoneId], references: [id])
   reservations Reservation[]
 
   @@unique([number])
@@ -43,6 +47,23 @@ model RestaurantSettings {
   // Simplified settings structure as JSON for flexibility
   data      Json
   updatedAt DateTime @updatedAt
+}
+
+model Zone {
+  id          String   @id @default(cuid())
+  name        String   // 'interior' | 'exterior' | 'terraza' | 'privado'
+  displayName String   // User-friendly name
+  color       String   @default("#e5e7eb") // Hex color for zone visualization
+  boundaryX   Float?   // Zone boundary X position (0-100)
+  boundaryY   Float?   // Zone boundary Y position (0-100)
+  width       Float?   // Zone width percentage (0-100)
+  height      Float?   // Zone height percentage (0-100)
+  isActive    Boolean  @default(true)
+  tables      Table[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([name])
 }
 
 enum ReservationStatus {

@@ -4,12 +4,15 @@ import { useRestaurant } from '@/context/RestaurantContext';
 import { TableIcon, LocationIcon } from '@/components/Icons';
 import { useMemo, useState } from 'react';
 import { Table } from '@/types';
+import TableMap from '@/components/TableMap';
 
 export default function TablesPage() {
   const { tables, reservations, createTable, toggleTableAvailability } = useRestaurant();
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [newTable, setNewTable] = useState({ number: '', capacity: '', location: 'interior' as Table['location'] });
+  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
 
   const tablesByLocation = useMemo(() => {
     const grouped: Record<string, Table[]> = {
@@ -112,6 +115,114 @@ export default function TablesPage() {
       </div>
 
       <div className="card p-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                Vista
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('map')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    viewMode === 'map'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Mapa
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Lista
+                </button>
+              </div>
+            </div>
+            
+            {viewMode === 'list' && (
+              <>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                    Ubicación
+                  </label>
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    className="input-field"
+                  >
+                    <option value="all">Todas las ubicaciones</option>
+                    <option value="interior">🏠 Interior</option>
+                    <option value="exterior">🌳 Exterior</option>
+                    <option value="terraza">☀️ Terraza</option>
+                    <option value="privado">🔒 Privado</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                    Ver reservas para
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {viewMode === 'map' ? (
+        <div className="card p-6 mb-6">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+            Mapa Visual de Mesas
+          </h2>
+          <TableMap
+            onTableSelect={setSelectedTable}
+            selectedTableId={selectedTable?.id}
+          />
+          
+          {selectedTable && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-[var(--text-primary)]">
+                    Mesa {selectedTable.number} - {selectedTable.capacity} personas
+                  </h3>
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    Ubicación: {locationLabels[selectedTable.location]} {locationIcons[selectedTable.location]}
+                  </p>
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    Estado: {selectedTable.isAvailable ? 'Disponible' : 'Ocupada'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => toggleTableAvailability(selectedTable.id, !selectedTable.isAvailable)}
+                    className="px-3 py-1 text-sm rounded border bg-white hover:bg-gray-50"
+                  >
+                    {selectedTable.isAvailable ? 'Marcar Ocupada' : 'Marcar Disponible'}
+                  </button>
+                  <button
+                    onClick={() => setSelectedTable(null)}
+                    className="px-3 py-1 text-sm rounded border bg-white hover:bg-gray-50"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
