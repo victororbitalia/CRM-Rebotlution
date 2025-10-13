@@ -2,6 +2,7 @@ import { RestaurantSettings } from '@/types/settings';
 
 export const defaultSettings: RestaurantSettings = {
   id: 'settings-1',
+  timezone: 'Europe/Madrid',
   
   // Información básica
   restaurantName: 'REBOTLUTION Restaurant',
@@ -31,7 +32,6 @@ export const defaultSettings: RestaurantSettings = {
     requireConfirmation: false,
     autoConfirmAfterMinutes: 30,
     defaultPreferredLocation: 'any',
-    timezone: 'Europe/Madrid',
   },
   
   // Configuración de mesas

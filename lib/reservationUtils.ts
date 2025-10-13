@@ -59,6 +59,7 @@ export function classifyAndGroupReservations(
     for (const r of arr) {
       const dt = DateTime.fromJSDate(new Date(r.date)).setZone(timezone);
       const key = dt.toISODate();
+      if (!key) continue; // Saltar si no se puede generar la clave
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     }
@@ -88,6 +89,6 @@ export function classifyAndGroupReservations(
   return { upcomingGroups, pastGroups };
 }
 
-export default {};
+// No hay exportación por defecto necesaria
 
 
