@@ -223,36 +223,38 @@ export default function TablesPage() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
-              Ubicación
-            </label>
-            <select
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="input-field"
-            >
-              <option value="all">Todas las ubicaciones</option>
-              <option value="interior">🏠 Interior</option>
-              <option value="exterior">🌳 Exterior</option>
-              <option value="terraza">☀️ Terraza</option>
-              <option value="privado">🔒 Privado</option>
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
-              Ver reservas para
-            </label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="input-field"
-            />
+        <div className="card p-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                Ubicación
+              </label>
+              <select
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+                className="input-field"
+              >
+                <option value="all">Todas las ubicaciones</option>
+                <option value="interior">🏠 Interior</option>
+                <option value="exterior">🌳 Exterior</option>
+                <option value="terraza">☀️ Terraza</option>
+                <option value="privado">🔒 Privado</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
+                Ver reservas para
+              </label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="input-field"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {selectedLocation === 'all' ? (
         <div className="space-y-6">
